@@ -1,5 +1,6 @@
 import stlinkusb
 import stlinkv2
+import stlinkex
 
 
 PARTNO = {
@@ -54,6 +55,8 @@ DEV_ID = {
         'flashpagesize': 2 * 1024,
     },
 }
+
+REGISTERS = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'SP', 'LR', 'PC']
 
 
 class Stlink(stlinkv2.StlinkV2):
@@ -128,8 +131,8 @@ class Stlink(stlinkv2.StlinkV2):
         self.read_idcode()
         self.read_flashsize()
         self.core_halt()
-        for i in range(16):
-            self.debug("%2d: %08x" % (i, self.get_reg(i)))
+        for i in range(len(REGISTERS)):
+            self.debug("%4s: %08x" % (REGISTERS[i], self.get_reg(i)))
         i = 15
         self.core_nodebug()
         self.leave_state()
