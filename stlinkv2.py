@@ -1,4 +1,5 @@
 import stlinkusb
+import stlinkex
 
 
 class StlinkV2(stlinkusb.StlinkUsb):
@@ -149,6 +150,8 @@ class StlinkV2(stlinkusb.StlinkUsb):
         return int.from_bytes(rx[4:8], byteorder='little')
 
     def get_mem32(self, addr, size):
+        if addr % 4:
+            raise stlinkex.StlinkException('get_mem: Address must be in multiples of 4')
         cmd = [self.STLINK_DEBUG_COMMAND, self.STLINK_DEBUG_READMEM_32BIT]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         cmd.extend(list(size.to_bytes(4, byteorder='little')))

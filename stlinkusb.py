@@ -17,6 +17,8 @@ class StlinkUsb():
     def debug(self, msg, level=0):
         if self._verbose >= level:
             print(msg)
+    def set_verbose(self, verbose):
+        self._verbose = verbose
 
     def xfer(self, tx, rx_len=0):
         tx_len = len(tx)
