@@ -118,28 +118,30 @@ class StlinkV2(lib.stlinkusb.StlinkUsb):
         return int.from_bytes(rx[:4], byteorder='little')
 
     def set_debugreg(self, addr, data):
+        if addr % 4:
+            raise lib.stlinkex.StlinkException('get_mem_short address is not in multiples of 4')
         cmd = [self.STLINK_DEBUG_COMMAND, self.STLINK_DEBUG_APIV2_WRITEDEBUGREG]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         cmd.extend(list(data.to_bytes(4, byteorder='little')))
         return self.xfer(cmd, 2)
 
     def get_debugreg(self, addr):
+        if addr % 4:
+            raise lib.stlinkex.StlinkException('get_mem_short address is not in multiples of 4')
         cmd = [self.STLINK_DEBUG_COMMAND, self.STLINK_DEBUG_APIV2_READDEBUGREG]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         rx = self.xfer(cmd, 8)
         return int.from_bytes(rx[4:8], byteorder='little')
 
     def get_debugreg16(self, addr):
-        if addr % 1:
-            raise lib.stlinkex.StlinkException('get_mem_short address is odd')
+        if addr % 2:
+            raise lib.stlinkex.StlinkException('get_mem_short address is not in even')
         val = self.get_debugreg(addr & 0xfffffffc)
         if addr % 4:
             val >>= 16
         return val & 0xffff
 
     def get_debugreg8(self, addr):
-        if addr % 1:
-            raise lib.stlinkex.StlinkException('get_mem_short address is odd')
         val = self.get_debugreg(addr & 0xfffffffc)
         val >>= (addr % 4) << 3
         return val & 0xff

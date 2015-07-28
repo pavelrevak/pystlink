@@ -176,6 +176,53 @@ class Stlink(lib.stlinkv2.StlinkV2):
         self._dbg.bargraph_done()
         return (addr, data)
 
+    def read_sram(self):
+        return self.read_mem(DEV_ID[self._dev_id]['sram_start'], DEV_ID[self._dev_id]['sram_size'])
+
+    def read_flash(self):
+        return self.read_mem(DEV_ID[self._dev_id]['flash_start'], self._flashsize)
+
+
+class App():
+    def __init__(self):
+        self._dbg = lib.dbg.Dbg(verbose=1)
+        self._stlink = None
+
+    def print_version(self):
+        print("ST-LinkV2 for python, (c)2015 by pavel.revak@gmail.com")
+
+    def print_help(self):
+        self.print_version()
+        print()
+        print("usage:")
+        print("  %s [commands ...]" % sys.argv[0])
+        print()
+        print("commands:")
+        print("  verbose:{level} - set verbose level from 0 - minimal to 3 - maximal")
+        print("  cpu[:{cputype}] - connect and detect CPU, set expected cputype, eg: STM32F051R8 (this is not implemented yet)")
+        print()
+        print("  dump:registers - print all registers")
+        print("  dump:flash - print content of FLASH memory")
+        print("  dump:sram - print content of SRAM memory")
+        print("  dump:mem:{addr}:{size} - print content of memory")
+        print("  dump:reg:{addr} - print content of 32 bit register")
+        print("  dump:reg16:{addr} - print content of 16 bit register")
+        print("  dump:reg8:{addr} - print content of 8 bit register")
+        print()
+        print("  download:mem:{addr}:{size}:{file} - download memory into file")
+        print("  download:sram:{file} - download SRAM into file")
+        print("  download:flash:{file} - download FLASH into file")
+        print()
+        print("example:")
+        print("  %s verbose:1 cpu dump:flash dump:sram dump:registers dump:mem:0x08000000:256 dump:reg:0xe000ed00" % sys.argv[0])
+
+    def parse_cpu(self, params):
+        cpu = None
+        if params:
+            cpu = params[0]
+        self._stlink = Stlink(dbg=self._dbg)
+        self._stlink.detect(cpu)
+
     def print_mem(self, mem, bytes_per_line=16):
         addr, data = mem
         prev_chunk = []
@@ -191,85 +238,95 @@ class Stlink(lib.stlinkv2.StlinkV2):
                 same_chunk = True
             addr += bytes_per_line
 
-    def read_sram(self):
-        return self.read_mem(DEV_ID[self._dev_id]['sram_start'], DEV_ID[self._dev_id]['sram_size'])
+    def parse_dump(self, params):
+        if self._stlink is None or self._stlink._dev_id is None:
+            raise lib.stlinkex.StlinkException('CPU is not selected')
+        cmd = params[0]
+        params = params[1:]
+        if cmd == 'registers':
+            self._stlink.dump_registers()
+        elif cmd == 'flash':
+            mem = self._stlink.read_flash()
+            self.print_mem(mem)
+        elif cmd == 'sram':
+            mem = self._stlink.read_sram()
+            self.print_mem(mem)
+        elif cmd == 'mem' and len(params) > 1:
+            mem = self._stlink.read_mem(int(params[0], 0), int(params[1], 0))
+            self.print_mem(mem)
+        elif (cmd == 'reg' or cmd == 'reg32') and params:
+            addr = int(params[0], 0)
+            reg = self._stlink.get_debugreg(addr)
+            print('  %08x: %08x' % (addr, reg))
+        elif cmd == 'reg16' and params:
+            addr = int(params[0], 0)
+            reg = self._stlink.get_debugreg16(addr)
+            print('  %08x: %04x' % (addr, reg))
+        elif cmd == 'reg8' and params:
+            addr = int(params[0], 0)
+            reg = self._stlink.get_debugreg8(addr)
+            print('  %08x: %02x' % (addr, reg))
+        else:
+            raise lib.stlinkex.StlinkException('Bad param: "dump:%s"' % cmd)
 
-    def read_flash(self):
-        return self.read_mem(DEV_ID[self._dev_id]['flash_start'], self._flashsize)
+    def store_file(self, mem, filename):
+        addr, data = mem
+        with open(filename, 'wb') as f:
+            f.write(bytes(data))
+
+    def parse_download(self, params):
+        if self._stlink is None or self._stlink._dev_id is None:
+            raise lib.stlinkex.StlinkException('CPU is not selected')
+        cmd = params[0]
+        params = params[1:]
+        if cmd == 'mem' and len(params) > 2:
+            mem = self._stlink.read_mem(int(params[0], 0), int(params[1], 0))
+            self.store_file(mem, params[2])
+        elif cmd == 'flash' and params:
+            mem = self._stlink.read_flash()
+            self.store_file(mem, params[0])
+        elif cmd == 'sram' and params:
+            mem = self._stlink.read_sram()
+            self.store_file(mem, params[0])
+        else:
+            raise lib.stlinkex.StlinkException('Bad param: "read:%s"' % cmd)
+
+    def parse_cmd(self, params):
+        cmd = params[0]
+        params = params[1:]
+        if cmd == 'help' and params:
+            self.print_help()
+        elif cmd == 'verbose' and params:
+            self._dbg.set_verbose(int(params[0]))
+        elif cmd == 'cpu':
+            self.parse_cpu(params)
+        elif cmd == 'dump' and params:
+            self.parse_dump(params)
+        elif cmd == 'download' and params:
+            self.parse_download(params)
+        else:
+            raise lib.stlinkex.StlinkException('Bad param: "%s"' % cmd)
+
+    def start(self):
+        argv = sys.argv[1:]
+        if not argv:
+            self.print_help()
+            return
+        try:
+            for arg in sys.argv[1:]:
+                self.parse_cmd(arg.split(':'))
+            self._dbg.debug('DONE', 2)
+        except lib.stlinkex.StlinkException as e:
+            self._dbg.debug(e, level=0)
+        except KeyboardInterrupt:
+            self._dbg.debug('Keyboard interrupt', level=0)
+        if self._stlink and self._stlink._dev_id:
+            try:
+                self._stlink.disconnect()
+            except lib.stlinkex.StlinkException as e:
+                self._dbg.debug(e, level=0)
+
 
 if __name__ == "__main__":
-    if not sys.argv[1:]:
-        print("ST-LinkV2 for python, (c)2015 by pavel.revak@gmail.com")
-        print()
-        print("usage:")
-        print("  %s [commands ...]" % sys.argv[0])
-        print()
-        print("commands:")
-        print("  verbose:{level} - set verbose level from 0 - minimal to 3 - maximal")
-        print("  cpu[:{cputype}] - connect and detect CPU, set expected cputype, eg: STM32F051R8 (this is not implemented yet)")
-        print("  dump:registers - print all registers")
-        print("  dump:flash - print content of FLASH memory")
-        print("  dump:sram - print content of SRAM memory")
-        print("  dump:mem:{addr}:{size} - print content of memory")
-        print("  dump:reg:{addr} - print content of 32 bit register")
-        print("  dump:reg16:{addr} - print content of 16 bit register")
-        print("  dump:reg8:{addr} - print content of 8 bit register")
-        print()
-        print("example:")
-        print("  %s verbose:1 cpu dump:flash dump:sram dump:registers dump:mem:0x08000000:256 dump:reg:0xe000ed00" % sys.argv[0])
-        exit()
-    stlink = None
-    dbg = lib.dbg.Dbg(verbose=1)
-    try:
-        for arg in sys.argv[1:]:
-            subargs = arg.split(':')
-            if subargs[0] == 'verbose' and len(subargs) > 1:
-                dbg.set_verbose(int(subargs[1]))
-            elif subargs[0] == 'cpu':
-                cpu = None
-                if len(subargs) > 1:
-                    cpu = subargs[1]
-                stlink = Stlink(dbg=dbg)
-                stlink.detect(cpu)
-            elif subargs[0] == 'dump' and len(subargs) > 1:
-                if stlink is None or stlink._dev_id is None:
-                    raise lib.stlinkex.StlinkException('CPU is not selected')
-                if subargs[1] == 'registers':
-                    stlink.dump_registers()
-                elif subargs[1] == 'flash':
-                    mem = stlink.read_flash()
-                    stlink.print_mem(mem)
-                elif subargs[1] == 'sram':
-                    mem = stlink.read_sram()
-                    stlink.print_mem(mem)
-                elif subargs[1] == 'mem' and len(subargs) > 3:
-                    mem = stlink.read_mem(int(subargs[2], 0), int(subargs[3], 0))
-                    stlink.print_mem(mem)
-                elif (subargs[1] == 'reg' or subargs[1] == 'reg32') and len(subargs) > 2:
-                    addr = int(subargs[2], 0)
-                    reg = stlink.get_debugreg(addr)
-                    print('  %08x: %08x' % (addr, reg))
-                elif subargs[1] == 'reg16' and len(subargs) > 2:
-                    addr = int(subargs[2], 0)
-                    reg = stlink.get_debugreg16(addr)
-                    print('  %08x: %04x' % (addr, reg))
-                elif subargs[1] == 'reg8' and len(subargs) > 2:
-                    addr = int(subargs[2], 0)
-                    reg = stlink.get_debugreg8(addr)
-                    print('  %08x: %02x' % (addr, reg))
-                else:
-                    raise lib.stlinkex.StlinkException('Bad subparam: "%s"' % arg)
-                    break
-            else:
-                raise lib.stlinkex.StlinkException('Bad param: "%s"' % arg)
-                break
-        dbg.debug('DONE', 2)
-    except lib.stlinkex.StlinkException as e:
-        dbg.debug(e, level=0)
-    except KeyboardInterrupt:
-        dbg.debug('Keyboard interrupt', level=0)
-    if stlink and stlink._dev_id:
-        try:
-            stlink.disconnect()
-        except lib.stlinkex.StlinkException as e:
-            dbg.debug(e, level=0)
+    app = App()
+    app.start()
