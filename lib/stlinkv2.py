@@ -1,8 +1,8 @@
-import stlinkusb
-import stlinkex
+import lib.stlinkusb
+import lib.stlinkex
 
 
-class StlinkV2(stlinkusb.StlinkUsb):
+class StlinkV2(lib.stlinkusb.StlinkUsb):
     STLINK_GET_VERSION                  = 0xf1
     STLINK_DEBUG_COMMAND                = 0xf2
     STLINK_DFU_COMMAND                  = 0xf3
@@ -106,9 +106,9 @@ class StlinkV2(stlinkusb.StlinkUsb):
             if freq >= f:
                 rx = self.xfer([self.STLINK_DEBUG_COMMAND, self.STLINK_DEBUG_APIV2_SWD_SET_FREQ, d], 2)  # ???
                 if rx[0] != 0x80:
-                    raise stlinkex.StlinkException("Error switching SWD frequency")
+                    raise lib.stlinkex.StlinkException("Error switching SWD frequency")
                 return
-        raise stlinkex.StlinkException("Selected SWD frequency is too low")
+        raise lib.stlinkex.StlinkException("Selected SWD frequency is too low")
 
     def enter_debug_swd(self):
         rx = self.xfer([self.STLINK_DEBUG_COMMAND, self.STLINK_DEBUG_APIV2_ENTER, self.STLINK_DEBUG_ENTER_SWD], 2)
@@ -131,7 +131,7 @@ class StlinkV2(stlinkusb.StlinkUsb):
 
     def get_debugreg16(self, addr):
         if addr % 1:
-            raise stlinkex.StlinkException('get_mem_short address is odd')
+            raise lib.stlinkex.StlinkException('get_mem_short address is odd')
         val = self.get_debugreg(addr & 0xfffffffc)
         if addr % 4:
             val >>= 16
@@ -139,7 +139,7 @@ class StlinkV2(stlinkusb.StlinkUsb):
 
     def get_debugreg8(self, addr):
         if addr % 1:
-            raise stlinkex.StlinkException('get_mem_short address is odd')
+            raise lib.stlinkex.StlinkException('get_mem_short address is odd')
         val = self.get_debugreg(addr & 0xfffffffc)
         val >>= (addr % 4) << 3
         return val & 0xff
@@ -151,7 +151,7 @@ class StlinkV2(stlinkusb.StlinkUsb):
 
     def get_mem32(self, addr, size):
         if addr % 4:
-            raise stlinkex.StlinkException('get_mem: Address must be in multiples of 4')
+            raise lib.stlinkex.StlinkException('get_mem: Address must be in multiples of 4')
         cmd = [self.STLINK_DEBUG_COMMAND, self.STLINK_DEBUG_READMEM_32BIT]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         cmd.extend(list(size.to_bytes(4, byteorder='little')))
