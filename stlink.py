@@ -15,55 +15,58 @@ PARTNO = {
     },
 }
 
-DEV_ID = {
-    0x413: {
+MCUS = [
+    {
+        'dev_id': 0x413,
         'type': 'STM32F405/407/415/417',
         'sram_start': 0x20000000,
         'sram_size': 192 * 1024,
         'flash_start': 0x08000000,
         'flashsize_reg': 0x1fff7a22,
         'flashpagesize': None,
-    },
-    0x419: {
+    }, {
+        'dev_id': 0x419,
         'type': 'STM32F42x/43x',
         'sram_start': 0x20000000,
         'sram_size': 256 * 1024,
         'flash_start': 0x08000000,
         'flashsize_reg': 0x1fff7a22,
         'flashpagesize': None,
-    },
-    # # this MCU will be detected as STM32F05x
-    # 0x440: {
-    #     'type': 'STM32F030x8',
-    # 'sram_start': 0x20000000,
-    #     'sram_size': 8 * 1024,
-    #     'flashsize_reg': 0x1ffff7cc,
-    # },
-    0x440: {
+    }, {
+        'dev_id': 0x440,
         'type': 'STM32F05x',
         'sram_start': 0x20000000,
         'sram_size': 8 * 1024,
         'flash_start': 0x08000000,
         'flashsize_reg': 0x1ffff7cc,
         'flashpagesize': 1024,
-    },
-    0x444: {
+    }, {
+        # this MCU will be detected as STM32F05x
+        'dev_id': 0x440,
+        'type': 'STM32F030x8',
+        'sram_start': 0x20000000,
+        'sram_size': 8 * 1024,
+        'flash_start': 0x08000000,
+        'flashsize_reg': 0x1ffff7cc,
+        'flashpagesize': 1024,
+    }, {
+        'dev_id': 0x444,
         'type': 'STM32F03x',
         'sram_start': 0x20000000,
         'sram_size': 4 * 1024,
         'flash_start': 0x08000000,
         'flashsize_reg': 0x1ffff7cc,
         'flashpagesize': 1024,
-    },
-    0x445: {
+    }, {
+        'dev_id': 0x445,
         'type': 'STM32F04x',
         'sram_start': 0x20000000,
         'sram_size': 6 * 1024,
         'flash_start': 0x08000000,
         'flashsize_reg': 0x1ffff7cc,
         'flashpagesize': 1024,
-    },
-    0x448: {
+    }, {
+        'dev_id': 0x448,
         'type': 'STM32F07x',
         'sram_start': 0x20000000,
         'sram_size': 16 * 1024,
@@ -71,7 +74,7 @@ DEV_ID = {
         'flashsize_reg': 0x1ffff7cc,
         'flashpagesize': 2 * 1024,
     },
-}
+]
 
 REGISTERS = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'SP', 'LR', 'PC']
 
@@ -89,6 +92,7 @@ class Stlink(lib.stlinkv2.StlinkV2):
         self._idcode = None
         self._partno = None
         self._dev_id = None
+        self._mcu = None
 
     def read_version(self):
         ver = self.get_version()
@@ -120,13 +124,17 @@ class Stlink(lib.stlinkv2.StlinkV2):
         self._idcode = self.get_debugreg(PARTNO[self._partno]['DBGMCU_IDCODE_addr'])
         self._dev_id = 0xfff & self._idcode
         self._dbg.msg("IDCODE: %08x" % self._idcode, 2)
-        if self._dev_id not in DEV_ID:
+        for mcu in MCUS:
+            if mcu['dev_id'] == self._dev_id:
+                self._mcu = mcu
+                break
+        else:
             raise lib.stlinkex.StlinkException('CPU is not supported')
-        self._dbg.msg("CPU: %s" % DEV_ID[self._dev_id]['type'])
-        self._dbg.msg("SRAM: %dKB" % (DEV_ID[self._dev_id]['sram_size'] / 1024))
+        self._dbg.msg("CPU: %s" % self._mcu['type'])
+        self._dbg.msg("SRAM: %dKB" % (self._mcu['sram_size'] / 1024))
 
     def read_flashsize(self):
-        self._flashsize = self.get_debugreg16(DEV_ID[self._dev_id]['flashsize_reg']) * 1024
+        self._flashsize = self.get_debugreg16(self._mcu['flashsize_reg']) * 1024
         self._dbg.msg("FLASH: %dKB" % (self._flashsize // 1024))
 
     def core_halt(self):
@@ -177,10 +185,10 @@ class Stlink(lib.stlinkv2.StlinkV2):
         return (addr, data)
 
     def read_sram(self):
-        return self.read_mem(DEV_ID[self._dev_id]['sram_start'], DEV_ID[self._dev_id]['sram_size'])
+        return self.read_mem(self._mcu['sram_start'], self._mcu['sram_size'])
 
     def read_flash(self):
-        return self.read_mem(DEV_ID[self._dev_id]['flash_start'], self._flashsize)
+        return self.read_mem(self._mcu['flash_start'], self._flashsize)
 
 
 class App():
@@ -214,7 +222,7 @@ class App():
         print("  download:flash:{file} - download FLASH into file")
         print()
         print("example:")
-        print("  %s verbose:1 cpu dump:flash dump:sram dump:registers dump:mem:0x08000000:256 dump:reg:0xe000ed00" % sys.argv[0])
+        print("  %s verbose:1 cpu dump:registers dump:mem:0x08000000:256 dump:reg:0xe000ed00 download:flash:stmflash.bin" % sys.argv[0])
 
     def parse_cpu(self, params):
         cpu = None
@@ -230,7 +238,12 @@ class App():
         for i in range(0, len(data), bytes_per_line):
             chunk = data[i:i + bytes_per_line]
             if prev_chunk != chunk:
-                print('  %08x  %s' % (addr, ' '.join(['%02x' % d for d in chunk])))
+                print('  %08x  %s%s  %s' % (
+                    addr,
+                    ' '.join(['%02x' % d for d in chunk]),
+                    '   ' * (16 - len(chunk)),
+                    ''.join([chr(d) if d >= 32 and d < 127 else '\u00B7' for d in chunk]),
+                ))
                 prev_chunk = chunk
                 same_chunk = False
             elif not same_chunk:
@@ -239,7 +252,7 @@ class App():
             addr += bytes_per_line
 
     def parse_dump(self, params):
-        if self._stlink is None or self._stlink._dev_id is None:
+        if self._stlink is None or self._stlink._mcu is None:
             raise lib.stlinkex.StlinkException('CPU is not selected')
         cmd = params[0]
         params = params[1:]
@@ -275,7 +288,7 @@ class App():
             f.write(bytes(data))
 
     def parse_download(self, params):
-        if self._stlink is None or self._stlink._dev_id is None:
+        if self._stlink is None or self._stlink._mcu is None:
             raise lib.stlinkex.StlinkException('CPU is not selected')
         cmd = params[0]
         params = params[1:]
