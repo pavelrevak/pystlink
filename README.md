@@ -38,6 +38,7 @@ This code is only for python v3
 
 ## Supported MCUs:
 - Actually all ST32F and ST32L MCUs
+- some basic info in wiki about STM32 naming: [STM32 coding matrix](https://github.com/pavelrevak/pystlink/wiki/STM32-coding-matrix)
 
 ## license
 - License is GPLv2
