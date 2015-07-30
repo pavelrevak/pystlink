@@ -1,13 +1,10 @@
 # PYSTLINK
-
 This is successful  attempt to communicate with ST-LinkV2.
 
 ## Goal
-At this time it only detect MCU and dump or read registers and memory.
+ At this time it only detect MCU and dump or download registers and memory.
 
-The main goal is to bring flashing support
-
-This code is only for python v3
+The main goal is to bring flashing support and then very basic debugging (something is now) or maybe connection to GDB
 
 ## Help
 
@@ -31,15 +28,21 @@ This code is only for python v3
 - `download:flash:{file}` - download FLASH into file
 
 ### Examples:
--  `stlink.py help`
--  `stlink.py cpu dump:registers download:sram:aaa.bin download:flash:bbb.bin`
--  `stlink.py verbose:0 cpu dump:mem:0x08000000:256`
--  `stlink.py verbose:2 cpu:STM32F03`
+```
+stlink.py help
+stlink.py cpu dump:registers download:sram:aaa.bin download:flash:bbb.bin
+stlink.py verbose:0 cpu dump:mem:0x08000000:256
+stlink.py verbose:2 cpu:STM32F03
+```
 
 ## Supported MCUs:
-- Actually all ST32F and ST32L MCUs
-- some basic info in wiki about STM32 naming: [STM32 coding matrix](https://github.com/pavelrevak/pystlink/wiki/STM32-coding-matrix)
+Actually all ST32F and ST32L MCUs
 
-## license
-- License is GPLv2
-- code in this project is inspired from openocd and sniffed communication from ST STLINK program
+some basic info in wiki about STM32 naming: [STM32 coding matrix](https://github.com/pavelrevak/pystlink/wiki/STM32-coding-matrix)
+
+## About
+This code is only for python v3
+
+License is GPLv2
+
+code in this project is inspired from openocd and sniffed communication from ST STLINK program
