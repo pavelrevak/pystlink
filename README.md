@@ -1,6 +1,6 @@
 # PYSTLINK
 
-This is successful attempt to communicate with ST-LinkV2 in **python-v3**.
+This is successful attempt to communicate with ST-Link/V2 in **python-v3**.
 
 ## Goal
 
@@ -52,3 +52,6 @@ Code is under MIT license.
 In general, this program is allowed to use in commercial without any limitations, but if you make some changes or updates then will be nice to share it.
 
 PYSTLINK is inspired by [OpenOCD](http://openocd.org/) and some info is from sniffed USB communication with [ST-LINK](http://www.st.com/web/en/catalog/tools/PF258168) program.
+
+## TAGS
+ST-Link/V2, stlink, SWD, Python, STM32, debug, flash, USB
