@@ -62,4 +62,4 @@ Code is under GPLv2 license
 
 This program is allowed to use in commercial without any limitations, but if you make some changes will be nice to share it.
 
-PYSTLINK is inspired by OpenOCD and some info is from sniffed USB communication with ST STLINK program
+PYSTLINK is inspired by [OpenOCD](http://openocd.org/) and some info is from sniffed USB communication with [ST-LINK](http://www.st.com/web/en/catalog/tools/PF258168) program
