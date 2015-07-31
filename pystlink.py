@@ -21,6 +21,8 @@ class App():
         print("  %s [commands ...]" % sys.argv[0])
         print()
         print("commands:")
+        print("  help - show help")
+        print("  version - show version")
         print("  verbose:{level} - set verbose level from 0 - minimal to 3 - maximal")
         print("  cpu[:{cputype}] - connect and detect CPU, set expected cputype, eg: STM32F051R8 or STM32L4")
         print()
@@ -40,8 +42,12 @@ class App():
         # print()
         # print("  upload:mem:{file}:{addr}[:{size}] - upload file into memory")
         # print()
-        print("example:")
-        print("  %s verbose:1 cpu dump:registers dump:mem:0x08000000:256 dump:reg:0xe000ed00 download:flash:stmflash.bin" % sys.argv[0])
+        print("examples:")
+        print("  %s help" % sys.argv[0])
+        print("  %s cpu dump:mem:0x08000000:256" % sys.argv[0])
+        print("  %s verbose:2 cpu:STM32F051R8" % sys.argv[0])
+        print("  %s verbose:0 cpu:STM32F03 dump:flash dump:sram" % sys.argv[0])
+        print("  %s cpu dump:registers download:sram:aaa.bin download:flash:bbb.bin" % sys.argv[0])
 
     def parse_cpu(self, params):
         cpu = None
