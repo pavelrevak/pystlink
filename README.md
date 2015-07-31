@@ -9,7 +9,7 @@ The main goal is to bring flashing support and then very basic debugging (someth
 ## Help
 
 ### Usage:
--  `stlink.py [commands ...]`
+-  `pystlink.py [commands ...]`
 
 ### Commands:
 - `verbose:{level}` - set verbose level from 0 - minimal to 3 - maximal
@@ -29,10 +29,10 @@ The main goal is to bring flashing support and then very basic debugging (someth
 
 ### Examples:
 ```
-stlink.py help
-stlink.py cpu dump:registers download:sram:aaa.bin download:flash:bbb.bin
-stlink.py verbose:0 cpu dump:mem:0x08000000:256
-stlink.py verbose:2 cpu:STM32F03
+pystlink.py help
+pystlink.py cpu dump:registers download:sram:aaa.bin download:flash:bbb.bin
+pystlink.py verbose:0 cpu dump:mem:0x08000000:256
+pystlink.py verbose:2 cpu:STM32F03
 ```
 
 ## Supported MCUs:
