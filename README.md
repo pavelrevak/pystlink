@@ -47,8 +47,8 @@ some basic info about STM32 naming is in our WiKi: [STM32 coding matrix](https:/
 
 ## Legal
 
-Code is under GPLv2 license.
+Code is under MIT license.
 
-This program is allowed to use in commercial without any limitations, but if you make some changes will be nice to share it.
+In general, this program is allowed to use in commercial without any limitations, but if you make some changes or updates then will be nice to share it.
 
 PYSTLINK is inspired by [OpenOCD](http://openocd.org/) and some info is from sniffed USB communication with [ST-LINK](http://www.st.com/web/en/catalog/tools/PF258168) program.
