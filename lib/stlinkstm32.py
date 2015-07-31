@@ -1,4 +1,3 @@
-import lib.stm32
 import lib.stlinkex
 
 
@@ -7,8 +6,9 @@ class StlinkStm32():
     REGISTERS = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'SP', 'LR', 'PC']
     CPUID_REG = 0xe000ed00
 
-    def __init__(self, driver, dbg):
+    def __init__(self, driver, devices, dbg):
         self._driver = driver
+        self._devices = devices
         self._dbg = dbg
         self._ver_stlink = None
         self._ver_jtag = None
@@ -59,7 +59,7 @@ class StlinkStm32():
     def find_mcus_by_core(self, cpuid):
         self._dbg.msg("CPUID: %08x" % cpuid, 2)
         partno = 0xfff & (cpuid >> 4)
-        for mcu_core in lib.stm32.DEVICES:
+        for mcu_core in self._devices:
             if mcu_core['part_no'] == partno:
                 return mcu_core
         raise lib.stlinkex.StlinkException('PART_NO: 0x%03x is not supported' % partno)
@@ -91,12 +91,12 @@ class StlinkStm32():
         if not mcus:
             raise lib.stlinkex.StlinkException('Connected CPU is not %s but detected is %s %s' % (
                 mcu_type,
-                'one of' if len(self._mcus) > 1 else ''
+                'one of' if len(self._mcus) > 1 else '',
                 ','.join([mcu['type'] for mcu in self._mcus]),
             ))
         return mcus
 
-    def clean_mcu_type(self, mcu_type=None):
+    def clean_mcu_type(self, mcu_type):
         mcu_type = mcu_type.upper()
         if not mcu_type.startswith('STM32'):
             raise lib.stlinkex.StlinkException('Selected CPU is not STM32')

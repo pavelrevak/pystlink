@@ -2,6 +2,7 @@ import sys
 import lib.stlinkusb
 import lib.stlinkv2
 import lib.stlinkstm32
+import lib.stm32
 import lib.stlinkex
 import lib.dbg
 
@@ -59,7 +60,7 @@ class App():
             cpu = params[0]
         self._connector = lib.stlinkusb.StlinkUsbConnector(dbg=self._dbg)
         self._driver = lib.stlinkv2.StlinkDriver(self._connector, dbg=self._dbg)
-        self._stlink = lib.stlinkstm32.StlinkStm32(self._driver, dbg=self._dbg)
+        self._stlink = lib.stlinkstm32.StlinkStm32(self._driver, lib.stm32.DEVICES, dbg=self._dbg)
         self._stlink.detect(cpu)
 
     def print_mem(self, mem, bytes_per_line=16):
