@@ -1,12 +1,16 @@
 import sys
-import lib.stlinkex
+import lib.stlinkusb
+import lib.stlinkv2
 import lib.stlinkstm32
+import lib.stlinkex
 import lib.dbg
 
 
 class App():
     def __init__(self):
         self._dbg = lib.dbg.Dbg(verbose=1)
+        self._connector = None
+        self._driver = None
         self._stlink = None
 
     def print_version(self):
@@ -53,7 +57,9 @@ class App():
         cpu = None
         if params:
             cpu = params[0]
-        self._stlink = lib.stlinkstm32.StlinkStm32(dbg=self._dbg)
+        self._connector = lib.stlinkusb.StlinkUsbConnector(dbg=self._dbg)
+        self._driver = lib.stlinkv2.StlinkDriver(self._connector, dbg=self._dbg)
+        self._stlink = lib.stlinkstm32.StlinkStm32(self._driver, dbg=self._dbg)
         self._stlink.detect(cpu)
 
     def print_mem(self, mem, bytes_per_line=16):
@@ -74,11 +80,12 @@ class App():
             elif not same_chunk:
                 print('  *')
                 same_chunk = True
-            addr += bytes_per_line
+            addr += len(chunk)
+        print('  %08x' % addr)
 
     def parse_dump(self, params):
         if self._stlink is None or self._stlink._mcus is None:
-            raise lib.stlinkex.StlinkException('CPU is not selected')
+            raise lib.stlinkex.StlinkExceptionCpuNotSelected()
         cmd = params[0]
         params = params[1:]
         if cmd == 'registers':
@@ -90,22 +97,22 @@ class App():
             mem = self._stlink.read_sram()
             self.print_mem(mem)
         elif cmd == 'mem' and len(params) > 1:
-            mem = self._stlink.read_mem(int(params[0], 0), int(params[1], 0))
+            mem = self._stlink.get_mem(int(params[0], 0), int(params[1], 0))
             self.print_mem(mem)
         elif (cmd == 'reg' or cmd == 'reg32') and params:
             addr = int(params[0], 0)
-            reg = self._stlink.get_debugreg(addr)
+            reg = self._driver.get_debugreg(addr)
             print('  %08x: %08x' % (addr, reg))
         elif cmd == 'reg16' and params:
             addr = int(params[0], 0)
-            reg = self._stlink.get_debugreg16(addr)
+            reg = self._driver.get_debugreg16(addr)
             print('  %08x: %04x' % (addr, reg))
         elif cmd == 'reg8' and params:
             addr = int(params[0], 0)
-            reg = self._stlink.get_debugreg8(addr)
+            reg = self._driver.get_debugreg8(addr)
             print('  %08x: %02x' % (addr, reg))
         else:
-            raise lib.stlinkex.StlinkException('Bad param: "dump:%s"' % cmd)
+            raise lib.stlinkex.StlinkExceptionBadParam()
 
     def store_file(self, mem, filename):
         addr, data = mem
@@ -114,7 +121,7 @@ class App():
 
     def parse_download(self, params):
         if self._stlink is None or self._stlink._mcu is None:
-            raise lib.stlinkex.StlinkException('CPU is not selected')
+            raise lib.stlinkex.StlinkExceptionCpuNotSelected()
         cmd = params[0]
         params = params[1:]
         if cmd == 'mem' and len(params) > 2:
@@ -127,7 +134,7 @@ class App():
             mem = self._stlink.read_sram()
             self.store_file(mem, params[0])
         else:
-            raise lib.stlinkex.StlinkException('Bad param: "read:%s"' % cmd)
+            raise lib.stlinkex.StlinkExceptionBadParam()
 
     def parse_cmd(self, params):
         cmd = params[0]
@@ -145,7 +152,7 @@ class App():
         elif cmd == 'download' and params:
             self.parse_download(params)
         else:
-            raise lib.stlinkex.StlinkException('Bad param: "%s"' % cmd)
+            raise lib.stlinkex.StlinkExceptionBadParam()
 
     def start(self):
         argv = sys.argv[1:]
@@ -154,13 +161,16 @@ class App():
             return
         try:
             for arg in sys.argv[1:]:
-                self.parse_cmd(arg.split(':'))
+                try:
+                    self.parse_cmd(arg.split(':'))
+                except lib.stlinkex.StlinkExceptionBadParam as e:
+                    raise e.set_cmd(arg)
             self._dbg.debug('DONE', 2)
         except lib.stlinkex.StlinkException as e:
             self._dbg.debug(e, level=0)
         except KeyboardInterrupt:
             self._dbg.debug('Keyboard interrupt', level=0)
-        if self._stlink and self._stlink._mcu_devid:
+        if self._stlink and self._stlink._mcus:
             try:
                 self._stlink.disconnect()
             except lib.stlinkex.StlinkException as e:

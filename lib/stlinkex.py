@@ -4,3 +4,23 @@ class StlinkException(Exception):
 
     def __str__(self):
         return "*** %s ***" % self._msg
+
+
+class StlinkExceptionBadParam(StlinkException):
+    def __init__(self, info=None):
+        self._info = info
+
+    def set_cmd(self, cmd):
+        self._cmd = cmd
+        return self
+
+    def __str__(self):
+        msg = 'Bad param: "%s"' % self._cmd
+        if self._info:
+            msg += ', ' + self._info
+        return "*** %s ***" % msg
+
+
+class StlinkExceptionCpuNotSelected(StlinkException):
+    def __init__(self):
+        self._msg = 'CPU is not selected'

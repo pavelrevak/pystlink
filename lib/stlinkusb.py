@@ -3,7 +3,7 @@ import usb.util
 import lib.stlinkex
 
 
-class StlinkUsb():
+class StlinkUsbConnector():
     STLINK_CMD_SIZE_V2 = 16
 
     def __init__(self, dbg=None):
