@@ -1,12 +1,12 @@
 # PYSTLINK
 
-This is successful attempt to communicate with ST-LinkV2 in python-v3.
+This is successful attempt to communicate with ST-LinkV2 in **python-v3**.
 
 ## Goal
 
- At this time it only detect MCU and dump or download registers and memory.
+At this time it only detect MCU and dump or download registers and memory.
 
-The main goal is to bring flashing support and then very basic debugging (something is now) or maybe connection to GDB
+The main goal is to bring flashing support and very basic debugging (something is right now) and maybe in future connection to GDB.
 
 ## Help
 
@@ -14,32 +14,21 @@ The main goal is to bring flashing support and then very basic debugging (someth
   `pystlink.py [commands ...]`
 
 ### Commands:
-  `help` - show help
-
-  `version` - show version
-
-  `verbose:{level}` - set verbose level from 0 - minimal to 3 - maximal
-
+  `help` - show help<br />
+  `version` - show version<br />
+  `verbose:{level}` - set verbose level from 0 - minimal to 3 - maximal<br />
   `cpu[:{cputype}]` - connect and detect CPU, set expected cputype, eg: STM32F051R8 or STM32L4
 
-  `dump:registers` - print all registers
-
-  `dump:flash` - print content of FLASH memory
-
-  `dump:sram` - print content of SRAM memory
-
-  `dump:mem:{addr}:{size}` - print content of memory
-
-  `dump:reg:{addr}` - print content of 32 bit register
-
-  `dump:reg16:{addr}` - print content of 16 bit register
-
+  `dump:registers` - print all registers<br />
+  `dump:flash` - print content of FLASH memory<br />
+  `dump:sram` - print content of SRAM memory<br />
+  `dump:mem:{addr}:{size}` - print content of memory<br />
+  `dump:reg:{addr}` - print content of 32 bit register<br />
+  `dump:reg16:{addr}` - print content of 16 bit register<br />
   `dump:reg8:{addr}` - print content of 8 bit register
 
-  `download:mem:{addr}:{size}:{file}` - download memory into file
-
-  `download:sram:{file}` - download SRAM into file
-
+  `download:mem:{addr}:{size}:{file}` - download memory into file<br />
+  `download:sram:{file}` - download SRAM into file<br />
   `download:flash:{file}` - download FLASH into file
 
 ### Examples:
@@ -52,14 +41,14 @@ pystlink.py cpu dump:registers download:sram:aaa.bin download:flash:bbb.bin
 
 ## Supported MCUs:
 
-Actually all ST32F and ST32L MCUs
+Actually all ST32F and ST32L [MCU](http://www.st.com/web/en/catalog/mmc/FM141/SC1169).
 
-some basic info in WiKi about STM32 naming: [STM32 coding matrix](https://github.com/pavelrevak/pystlink/wiki/STM32-coding-matrix)
+some basic info about STM32 naming is in our WiKi: [STM32 coding matrix](https://github.com/pavelrevak/pystlink/wiki/STM32-coding-matrix)
 
 ## Legal
 
-Code is under GPLv2 license
+Code is under GPLv2 license.
 
 This program is allowed to use in commercial without any limitations, but if you make some changes will be nice to share it.
 
-PYSTLINK is inspired by [OpenOCD](http://openocd.org/) and some info is from sniffed USB communication with [ST-LINK](http://www.st.com/web/en/catalog/tools/PF258168) program
+PYSTLINK is inspired by [OpenOCD](http://openocd.org/) and some info is from sniffed USB communication with [ST-LINK](http://www.st.com/web/en/catalog/tools/PF258168) program.
