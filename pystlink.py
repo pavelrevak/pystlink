@@ -45,8 +45,8 @@ class App():
         print()
         print("  write:reg:{addr}:{data} - write 32 bit register")
         print()
-        # print("  upload:mem:{file}:{addr}[:{size}] - upload file into memory")
-        # print()
+        print("  upload:mem:{addr}:{file} - upload file into memory (not for writing FLASH, only SRAM or registers")
+        print()
         print("examples:")
         print("  %s help" % sys.argv[0])
         print("  %s cpu dump:mem:0x08000000:256" % sys.argv[0])
@@ -146,13 +146,21 @@ class App():
             raise lib.stlinkex.StlinkExceptionCpuNotSelected()
         cmd = params[0]
         params = params[1:]
-        if cmd == 'mem' and len(params) > 1:
-            data = self.read_file(params[1])
-            self._stlink.set_mem(int(params[0], 0), data)
-        elif (cmd == 'reg') and params and len(params) > 1:
+        if (cmd == 'reg') and params and len(params) > 1:
             addr = int(params[0], 0)
             data = int(params[1], 0)
             self._driver.set_debugreg32(addr, data)
+        else:
+            raise lib.stlinkex.StlinkExceptionBadParam()
+
+    def parse_upload(self, params):
+        if self._stlink is None or self._stlink._mcus is None:
+            raise lib.stlinkex.StlinkExceptionCpuNotSelected()
+        cmd = params[0]
+        params = params[1:]
+        if cmd == 'mem' and len(params) > 1:
+            data = self.read_file(params[1])
+            self._stlink.set_mem(int(params[0], 0), data)
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 
@@ -173,6 +181,8 @@ class App():
             self.parse_download(params)
         elif cmd == 'write' and params:
             self.parse_write(params)
+        elif cmd == 'upload' and params:
+            self.parse_upload(params)
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 

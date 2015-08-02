@@ -31,6 +31,10 @@ The main goal is to bring flashing support and very basic debugging (something i
   `download:sram:{file}` - download SRAM into file<br />
   `download:flash:{file}` - download FLASH into file
 
+  `write:reg:{addr}:{data}` - write 32 bit register
+
+  `upload:mem:{addr}:{file}` - upload file into memory (not for writing FLASH, only SRAM or registers)
+
 ### Examples:
 ```
 pystlink.py cpu dump:mem:0x08000000:256
