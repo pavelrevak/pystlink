@@ -14,17 +14,26 @@ class StlinkUsbConnector():
         self._dev.set_configuration()
         self._dbg.debug("successfully connected to stlink", 2)
 
-    def xfer(self, tx, rx_len=0):
-        tx_len = len(tx)
-        if tx_len > self.STLINK_CMD_SIZE_V2:
-            raise lib.stlinkex.StlinkException("Too many tx bytes: %d, maximum is %d" % (tx_len, self.STLINK_CMD_SIZE_V2))
+    def _write(self, data):
+        self._dbg.debug("  USB > %s" % ' '.join(['%02x' % i for i in data]), level=3)
+        count = self._dev.write(0x02, data, 0)
+        if count != len(data):
+            raise lib.stlinkex.StlinkException("Only %d bytes was transmitted to ST-LINK instead of %d" % (count, len(data)))
+
+    def _read(self, size):
+        data = self._dev.read(0x81, size, 0).tolist()
+        self._dbg.debug("  USB < %s" % ' '.join(['%02x' % i for i in data]), level=3)
+        return data
+
+    def xfer(self, cmd, data=None, rx_len=None):
+        cmd_len = len(cmd)
+        if cmd_len > self.STLINK_CMD_SIZE_V2:
+            raise lib.stlinkex.StlinkException("Too many tx bytes: %d, maximum is %d" % (cmd_len, self.STLINK_CMD_SIZE_V2))
         # pad to 16 bytes
-        tx += [0] * (self.STLINK_CMD_SIZE_V2 - tx_len)
-        self._dbg.debug("  USB > %s" % ' '.join(['%02x' % i for i in tx]), level=3)
-        count = self._dev.write(0x02, tx, 0)
-        if count != self.STLINK_CMD_SIZE_V2:
-            raise lib.stlinkex.StlinkException("Only %d bytes was transmitted to Stlink instead of %d" % (count, self.STLINK_CMD_SIZE_V2))
+        cmd += [0] * (self.STLINK_CMD_SIZE_V2 - cmd_len)
+        self._write(cmd)
+        if data:
+            self._write(data)
         if rx_len:
-            rx = self._dev.read(0x81, rx_len, 0).tolist()
-            self._dbg.debug("  USB < %s" % ' '.join(['%02x' % i for i in rx]), level=3)
-            return rx
+            return self._read(rx_len)
+        return None

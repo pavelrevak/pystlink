@@ -81,11 +81,11 @@ class StlinkDriver():
         self._dbg = dbg
 
     def get_version(self):
-        rx = self._connector.xfer([StlinkDriver.STLINK_GET_VERSION, 0x80], 6)
+        rx = self._connector.xfer([StlinkDriver.STLINK_GET_VERSION, 0x80], rx_len=6)
         return int.from_bytes(rx[:2], byteorder='big')
 
     def leave_state(self):
-        rx = self._connector.xfer([StlinkDriver.STLINK_GET_CURRENT_MODE], 2)
+        rx = self._connector.xfer([StlinkDriver.STLINK_GET_CURRENT_MODE], rx_len=2)
         if rx[0] == StlinkDriver.STLINK_MODE_DFU:
             self._connector.xfer([StlinkDriver.STLINK_DFU_COMMAND, StlinkDriver.STLINK_DFU_EXIT])
         if rx[0] == StlinkDriver.STLINK_MODE_DEBUG:
@@ -95,7 +95,7 @@ class StlinkDriver():
 
     def get_target_voltage(self):
         self.leave_state()
-        rx = self._connector.xfer([StlinkDriver.STLINK_GET_TARGET_VOLTAGE], 8)  # GET_TARGET_VOLTAGE
+        rx = self._connector.xfer([StlinkDriver.STLINK_GET_TARGET_VOLTAGE], rx_len=8)
         a0 = int.from_bytes(rx[:4], byteorder='little')
         a1 = int.from_bytes(rx[4:8], byteorder='little')
         if a0 != 0:
@@ -104,57 +104,81 @@ class StlinkDriver():
     def set_swd_freq(self, freq=1800000):
         for f, d in StlinkDriver.STLINK_DEBUG_APIV2_SWD_SET_FREQ_MAP.items():
             if freq >= f:
-                rx = self._connector.xfer([StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_APIV2_SWD_SET_FREQ, d], 2)  # ???
+                rx = self._connector.xfer([StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_APIV2_SWD_SET_FREQ, d], rx_len=2)
                 if rx[0] != 0x80:
                     raise lib.stlinkex.StlinkException("Error switching SWD frequency")
                 return
         raise lib.stlinkex.StlinkException("Selected SWD frequency is too low")
 
     def enter_debug_swd(self):
-        rx = self._connector.xfer([StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_APIV2_ENTER, StlinkDriver.STLINK_DEBUG_ENTER_SWD], 2)
+        rx = self._connector.xfer([StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_APIV2_ENTER, StlinkDriver.STLINK_DEBUG_ENTER_SWD], rx_len=2)
 
     def get_coreid(self):
-        rx = self._connector.xfer([StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_READCOREID], 4)
+        rx = self._connector.xfer([StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_READCOREID], rx_len=4)
         return int.from_bytes(rx[:4], byteorder='little')
 
-    def set_debugreg(self, addr, data):
+    def set_debugreg32(self, addr, data):
         if addr % 4:
             raise lib.stlinkex.StlinkException('get_mem_short address is not in multiples of 4')
         cmd = [StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_APIV2_WRITEDEBUGREG]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         cmd.extend(list(data.to_bytes(4, byteorder='little')))
-        return self._connector.xfer(cmd, 2)
+        return self._connector.xfer(cmd, rx_len=2)
 
-    def get_debugreg(self, addr):
+    def get_debugreg32(self, addr):
         if addr % 4:
             raise lib.stlinkex.StlinkException('get_mem_short address is not in multiples of 4')
         cmd = [StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_APIV2_READDEBUGREG]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
-        rx = self._connector.xfer(cmd, 8)
+        rx = self._connector.xfer(cmd, rx_len=8)
         return int.from_bytes(rx[4:8], byteorder='little')
 
     def get_debugreg16(self, addr):
         if addr % 2:
             raise lib.stlinkex.StlinkException('get_mem_short address is not in even')
-        val = self.get_debugreg(addr & 0xfffffffc)
+        val = self.get_debugreg32(addr & 0xfffffffc)
         if addr % 4:
             val >>= 16
         return val & 0xffff
 
     def get_debugreg8(self, addr):
-        val = self.get_debugreg(addr & 0xfffffffc)
+        val = self.get_debugreg32(addr & 0xfffffffc)
         val >>= (addr % 4) << 3
         return val & 0xff
 
     def get_reg(self, reg):
         cmd = [StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_APIV2_READREG, reg]
-        rx = self._connector.xfer(cmd, 8)
+        rx = self._connector.xfer(cmd, rx_len=8)
         return int.from_bytes(rx[4:8], byteorder='little')
 
     def get_mem32(self, addr, size):
         if addr % 4:
-            raise lib.stlinkex.StlinkException('get_mem: Address must be in multiples of 4')
+            raise lib.stlinkex.StlinkException('get_mem32: Address must be in multiples of 4')
+        if size % 4:
+            raise lib.stlinkex.StlinkException('get_mem32: Size must be in multiples of 4')
         cmd = [StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_READMEM_32BIT]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         cmd.extend(list(size.to_bytes(4, byteorder='little')))
-        return self._connector.xfer(cmd, size)
+        return self._connector.xfer(cmd, rx_len=size)
+
+    def set_mem32(self, addr, data):
+        if addr % 4:
+            raise lib.stlinkex.StlinkException('set_mem32: Address must be in multiples of 4')
+        if len(data) % 4:
+            raise lib.stlinkex.StlinkException('set_mem32: Size must be in multiples of 4')
+        cmd = [StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_WRITEMEM_32BIT]
+        cmd.extend(list(addr.to_bytes(4, byteorder='little')))
+        cmd.extend(list(len(data).to_bytes(4, byteorder='little')))
+        self._connector.xfer(cmd, data=data)
+
+    def get_mem8(self, addr, size):
+        cmd = [StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_READMEM_8BIT]
+        cmd.extend(list(addr.to_bytes(4, byteorder='little')))
+        cmd.extend(list(size.to_bytes(4, byteorder='little')))
+        return self._connector.xfer(cmd, rx_len=size)
+
+    def set_mem8(self, addr, data):
+        cmd = [StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_WRITEMEM_8BIT]
+        cmd.extend(list(addr.to_bytes(4, byteorder='little')))
+        cmd.extend(list(len(data).to_bytes(4, byteorder='little')))
+        self._connector.xfer(cmd, data=data)

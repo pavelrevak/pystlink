@@ -43,8 +43,8 @@ class App():
         print("  download:sram:{file} - download SRAM into file")
         print("  download:flash:{file} - download FLASH into file")
         print()
-        # print("  write:reg:{data}:{addr} - write 32 bit register")
-        # print()
+        print("  write:reg:{addr}:{data} - write 32 bit register")
+        print()
         # print("  upload:mem:{file}:{addr}[:{size}] - upload file into memory")
         # print()
         print("examples:")
@@ -102,7 +102,7 @@ class App():
             self.print_mem(mem)
         elif (cmd == 'reg' or cmd == 'reg32') and params:
             addr = int(params[0], 0)
-            reg = self._driver.get_debugreg(addr)
+            reg = self._driver.get_debugreg32(addr)
             print('  %08x: %08x' % (addr, reg))
         elif cmd == 'reg16' and params:
             addr = int(params[0], 0)
@@ -120,8 +120,12 @@ class App():
         with open(filename, 'wb') as f:
             f.write(bytes(data))
 
+    def read_file(self, filename, size=None):
+        with open(filename, 'rb') as f:
+            return list(f.read())
+
     def parse_download(self, params):
-        if self._stlink is None or self._stlink._mcu is None:
+        if self._stlink is None or self._stlink._mcus is None:
             raise lib.stlinkex.StlinkExceptionCpuNotSelected()
         cmd = params[0]
         params = params[1:]
@@ -134,6 +138,21 @@ class App():
         elif cmd == 'sram' and params:
             mem = self._stlink.read_sram()
             self.store_file(mem, params[0])
+        else:
+            raise lib.stlinkex.StlinkExceptionBadParam()
+
+    def parse_write(self, params):
+        if self._stlink is None or self._stlink._mcus is None:
+            raise lib.stlinkex.StlinkExceptionCpuNotSelected()
+        cmd = params[0]
+        params = params[1:]
+        if cmd == 'mem' and len(params) > 1:
+            data = self.read_file(params[1])
+            self._stlink.set_mem(int(params[0], 0), data)
+        elif (cmd == 'reg') and params and len(params) > 1:
+            addr = int(params[0], 0)
+            data = int(params[1], 0)
+            self._driver.set_debugreg32(addr, data)
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 
@@ -152,6 +171,8 @@ class App():
             self.parse_dump(params)
         elif cmd == 'download' and params:
             self.parse_download(params)
+        elif cmd == 'write' and params:
+            self.parse_write(params)
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 

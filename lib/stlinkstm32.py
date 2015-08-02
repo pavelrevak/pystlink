@@ -42,13 +42,13 @@ class StlinkStm32():
         self._dbg.msg("SUPPLY: %.2fV" % self._voltage)
 
     def core_halt(self):
-        self._driver.set_debugreg(0xe000edf0, 0xa05f0003)
+        self._driver.set_debugreg32(0xe000edf0, 0xa05f0003)
 
     def core_run(self):
-        self._driver.set_debugreg(0xe000edf0, 0xa05f0001)
+        self._driver.set_debugreg32(0xe000edf0, 0xa05f0001)
 
     def core_nodebug(self):
-        self._driver.set_debugreg(0xe000edf0, 0xa05f0000)
+        self._driver.set_debugreg32(0xe000edf0, 0xa05f0000)
 
     def read_coreid(self):
         self._coreid = self._driver.get_coreid()
@@ -109,10 +109,10 @@ class StlinkStm32():
 
     def read_mcu_info(self, mcu_type):
         # find core by part_no from CPUID register
-        cpuid = self._driver.get_debugreg(StlinkStm32.CPUID_REG)
+        cpuid = self._driver.get_debugreg32(StlinkStm32.CPUID_REG)
         self._mcus_by_core = self.find_mcus_by_core(cpuid)
         # find MCUs group by dev_id from IDCODE register
-        idcode = self._driver.get_debugreg(self._mcus_by_core['idcode_reg'])
+        idcode = self._driver.get_debugreg32(self._mcus_by_core['idcode_reg'])
         self._mcus_by_devid = self.find_mcus_by_devid(idcode)
         # find MCUs by flash size
         self._flash_size = self._driver.get_debugreg16(self._mcus_by_devid['flash_size_reg'])
@@ -162,28 +162,46 @@ class StlinkStm32():
             print("  %3s: %08x" % (StlinkStm32.REGISTERS[i], self._driver.get_reg(i)))
 
     def get_mem(self, addr, size, block_size=1024):
-        if size <= 0:
-            return addr, []
+        self._dbg.bargraph_start('reading memory', value_max=size)
         data = []
-        blocks = size // block_size
-        if size % block_size:
-            blocks += 1
-        self._dbg.bargraph_start('reading memory', value_max=blocks)
-        iaddr = addr
-        for i in range(blocks):
-            self._dbg.bargraph_update(value=i)
-            if (i + 1) * block_size > size:
-                block_size = size - (block_size * i)
-            block = self._driver.get_mem32(iaddr, block_size)
-            data.extend(block)
-            iaddr += block_size
+        if addr % 4:
+            read_size = min(4 - (addr % 4), size)
+            data = self._driver.get_mem8(addr, read_size)
+        while True:
+            self._dbg.bargraph_update(value=len(data))
+            read_size = min((size - len(data) & 0x0ffc), block_size)
+            if read_size == 0:
+                break
+            data.extend(self._driver.get_mem32(addr + len(data), read_size))
+        if len(data) < size:
+            read_size = size - len(data)
+            data.extend(self._driver.get_mem8(addr + len(data), read_size))
+        self._dbg.bargraph_done()
+        return (addr, data)
+
+    def set_mem(self, addr, data, block_size=1024):
+        self._dbg.bargraph_start('writing memory', value_max=len(data))
+        size = 0
+        if addr % 4:
+            write_size = min(4 - (addr % 4), len(data))
+            self._driver.set_mem8(addr, data[:write_size])
+            size = write_size
+        while True:
+            self._dbg.bargraph_update(value=size)
+            write_size = min((len(data) - size) & 0x0ffc, block_size)
+            if write_size == 0:
+                break
+            self._driver.set_mem32(addr + size, data[size:size + write_size])
+            size += write_size
+        if size < len(data):
+            self._driver.set_mem8(addr + size, data[size:])
         self._dbg.bargraph_done()
         return (addr, data)
 
     def read_sram(self):
-        return self.get_mem(self._sram_start, self._sram_size)
+        return self.get_mem32(self._sram_start, self._sram_size * 1024)
 
     def read_flash(self):
-        return self.get_mem(self._flash_start, self._flash_size)
+        return self.get_mem32(self._flash_start, self._flash_size * 1024)
 
 
