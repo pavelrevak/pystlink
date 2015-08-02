@@ -8,6 +8,12 @@ At this time it only detect MCU and dump or download registers and memory.
 
 The main goal is to bring flashing support and very basic debugging (something is right now) and maybe in future connection to GDB.
 
+## Install
+
+- Download and unpack or `git clone https://github.com/pavelrevak/pystlink.git`
+- Connect ST-LINK/V2, with latest firmware
+- Run `python3 pystlink.py help`
+
 ## Help
 
 ### Usage:
@@ -16,7 +22,7 @@ The main goal is to bring flashing support and very basic debugging (something i
 ### Commands:
   `help` - show help<br />
   `version` - show version<br />
-  `verbose:{level}` - set verbose level from 0 - minimal to 3 - maximal<br />
+  `verbose:{level}` - set verbose level from 0 - minimal to 3 - maximal (can also use between commands)<br />
   `cpu[:{cputype}]` - connect and detect CPU, set expected cputype, eg: STM32F051R8 or STM32L4
 
   `dump:registers` - print all registers<br />
