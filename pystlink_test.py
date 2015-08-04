@@ -195,6 +195,232 @@ class TestStlinkStm32(unittest.TestCase):
         with self.assertRaises(lib.stlinkex.StlinkException):
             self._stlink.clean_mcu_type('MSP430')
 
+class TestStlinkStm32_get_mem(unittest.TestCase):
+    def setUp(self):
+        class MockDriver():
+            def __init__(self, test):
+                self._test = test
+                self._pointer = None
+                self._index = 0
+            def get_mem32(self, addr, size):
+                self._test.assertNotEqual(size, 0)
+                self._test.assertEqual(addr % 4, 0)
+                self._test.assertEqual(size % 4, 0)
+                if self._pointer is None:
+                    self._pointer = addr
+                self._test.assertEqual(addr, self._pointer)
+                self._pointer += size
+                old_index = self._index
+                self._index += size
+                return [i & 0xff for i in range(old_index, self._index)]
+            def get_mem8(self, addr, size):
+                self._test.assertNotEqual(size, 0)
+                if self._pointer is None:
+                    self._pointer = addr
+                self._test.assertEqual(addr, self._pointer)
+                self._pointer += size
+                old_index = self._index
+                self._index += size
+                return [i & 0xff for i in range(old_index, self._index)]
+        self._stlink = lib.stlinkstm32.StlinkStm32(MockDriver(self), None, MockDbg())
+
+    def _test_get_mem(self, addr, size):
+        addr, data = self._stlink.get_mem(addr, size)
+        self.assertEqual(addr, addr)
+        expected_data = [i & 0xff for i in range(0, size)]
+        self.assertEqual(data, expected_data)
+
+    def test_addr_0_size_0(self):
+        self._test_get_mem(0, 0)
+
+    def test_addr_0_size_1(self):
+        self._test_get_mem(0, 1)
+
+    def test_addr_0_size_2(self):
+        self._test_get_mem(0, 2)
+
+    def test_addr_0_size_3(self):
+        self._test_get_mem(0, 3)
+
+    def test_addr_0_size_4(self):
+        self._test_get_mem(0, 4)
+
+    def test_addr_1_size_0(self):
+        self._test_get_mem(1, 0)
+
+    def test_addr_1_size_1(self):
+        self._test_get_mem(1, 1)
+
+    def test_addr_1_size_3(self):
+        self._test_get_mem(1, 3)
+
+    def test_addr_1_size_4(self):
+        self._test_get_mem(1, 4)
+
+    def test_addr_2_size_1(self):
+        self._test_get_mem(2, 1)
+
+    def test_addr_2_size_2(self):
+        self._test_get_mem(2, 2)
+
+    def test_addr_2_size_4(self):
+        self._test_get_mem(2, 4)
+
+    def test_addr_3_size_1(self):
+        self._test_get_mem(3, 1)
+
+    def test_addr_3_size_2(self):
+        self._test_get_mem(3, 2)
+
+    def test_addr_3_size_4(self):
+        self._test_get_mem(3, 4)
+
+    def test_addr_4_size_1(self):
+        self._test_get_mem(4, 1)
+
+    def test_addr_4_size_4(self):
+        self._test_get_mem(4, 4)
+
+    def test_addr_4_size_12(self):
+        self._test_get_mem(4, 12)
+
+    def test_addr_4_size_13(self):
+        self._test_get_mem(4, 13)
+
+    def test_addr_5_size_11(self):
+        self._test_get_mem(5, 11)
+
+    def test_addr_5_size_12(self):
+        self._test_get_mem(5, 12)
+
+    def test_addr_0_size_1024(self):
+        self._test_get_mem(0, 1024)
+
+    def test_addr_0_size_1025(self):
+        self._test_get_mem(0, 1025)
+
+    def test_addr_0_size_1028(self):
+        self._test_get_mem(0, 1028)
+
+    def test_addr_0_size_2048(self):
+        self._test_get_mem(0, 2048)
+
+    def test_addr_1_size_1100(self):
+        self._test_get_mem(1, 1100)
+
+    def test_addr_4_size_1100(self):
+        self._test_get_mem(2, 1100)
+
+
+class TestStlinkStm32_set_mem(unittest.TestCase):
+    def setUp(self):
+        class MockDriver():
+            def __init__(self, test):
+                self._test = test
+                self._pointer = None
+                self._index = 0
+            def set_mem32(self, addr, data):
+                self._test.assertNotEqual(len(data), 0)
+                self._test.assertEqual(addr % 4, 0)
+                self._test.assertEqual(len(data) % 4, 0)
+                if self._pointer is None:
+                    self._pointer = addr
+                self._test.assertEqual(addr, self._pointer)
+                self._pointer += len(data)
+                self._index += len(data)
+            def set_mem8(self, addr, data):
+                self._test.assertNotEqual(len(data), 0)
+                if self._pointer is None:
+                    self._pointer = addr
+                self._test.assertEqual(addr, self._pointer)
+                self._pointer += len(data)
+                self._index += len(data)
+        self._stlink = lib.stlinkstm32.StlinkStm32(MockDriver(self), None, MockDbg())
+
+    def _test_set_mem(self, addr, size):
+        self._stlink.set_mem(addr, [i & 0xff for i in range(0, size)])
+
+    def test_addr_0_size_0(self):
+        self._test_set_mem(0, 0)
+
+    def test_addr_0_size_1(self):
+        self._test_set_mem(0, 1)
+
+    def test_addr_0_size_2(self):
+        self._test_set_mem(0, 2)
+
+    def test_addr_0_size_3(self):
+        self._test_set_mem(0, 3)
+
+    def test_addr_0_size_4(self):
+        self._test_set_mem(0, 4)
+
+    def test_addr_1_size_0(self):
+        self._test_set_mem(1, 0)
+
+    def test_addr_1_size_1(self):
+        self._test_set_mem(1, 1)
+
+    def test_addr_1_size_3(self):
+        self._test_set_mem(1, 3)
+
+    def test_addr_1_size_4(self):
+        self._test_set_mem(1, 4)
+
+    def test_addr_2_size_1(self):
+        self._test_set_mem(2, 1)
+
+    def test_addr_2_size_2(self):
+        self._test_set_mem(2, 2)
+
+    def test_addr_2_size_4(self):
+        self._test_set_mem(2, 4)
+
+    def test_addr_3_size_1(self):
+        self._test_set_mem(3, 1)
+
+    def test_addr_3_size_2(self):
+        self._test_set_mem(3, 2)
+
+    def test_addr_3_size_4(self):
+        self._test_set_mem(3, 4)
+
+    def test_addr_4_size_1(self):
+        self._test_set_mem(4, 1)
+
+    def test_addr_4_size_4(self):
+        self._test_set_mem(4, 4)
+
+    def test_addr_4_size_12(self):
+        self._test_set_mem(4, 12)
+
+    def test_addr_4_size_13(self):
+        self._test_set_mem(4, 13)
+
+    def test_addr_5_size_11(self):
+        self._test_set_mem(5, 11)
+
+    def test_addr_5_size_12(self):
+        self._test_set_mem(5, 12)
+
+    def test_addr_0_size_1024(self):
+        self._test_set_mem(0, 1024)
+
+    def test_addr_0_size_1025(self):
+        self._test_set_mem(0, 1025)
+
+    def test_addr_0_size_1028(self):
+        self._test_set_mem(0, 1028)
+
+    def test_addr_0_size_2048(self):
+        self._test_set_mem(0, 2048)
+
+    def test_addr_1_size_1100(self):
+        self._test_set_mem(1, 1100)
+
+    def test_addr_4_size_1100(self):
+        self._test_set_mem(2, 1100)
+
 
 if __name__ == '__main__':
     unittest.main()

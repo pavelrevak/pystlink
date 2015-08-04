@@ -3,7 +3,7 @@ import lib.stlinkex
 
 class StlinkStm32():
 
-    REGISTERS = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'SP', 'LR', 'PC']
+    REGISTERS = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'SP', 'LR', 'PC', 'PSR', 'MSP', 'PSP']
     CPUID_REG = 0xe000ed00
 
     def __init__(self, driver, devices, dbg):
@@ -161,7 +161,16 @@ class StlinkStm32():
         for i in range(len(StlinkStm32.REGISTERS)):
             print("  %3s: %08x" % (StlinkStm32.REGISTERS[i], self._driver.get_reg(i)))
 
+    def dump_register(self, reg):
+        reg = reg.upper()
+        if reg not in StlinkStm32.REGISTERS:
+            return
+        self.core_halt()
+        print("  %3s: %08x" % (reg, self._driver.get_reg(StlinkStm32.REGISTERS.index(reg))))
+
     def get_mem(self, addr, size, block_size=1024):
+        if size == 0:
+            return addr, []
         self._dbg.bargraph_start('reading memory', value_max=size)
         data = []
         if addr % 4:
@@ -180,6 +189,8 @@ class StlinkStm32():
         return (addr, data)
 
     def set_mem(self, addr, data, block_size=1024):
+        if len(data) == 0:
+            return addr, []
         self._dbg.bargraph_start('writing memory', value_max=len(data))
         size = 0
         if addr % 4:

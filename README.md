@@ -25,7 +25,8 @@ The main goal is to bring flashing support and very basic debugging (something i
   `verbose:{level}` - set verbose level from 0 - minimal to 3 - maximal (can also use between commands)<br />
   `cpu[:{cputype}]` - connect and detect CPU, set expected cputype, eg: STM32F051R8 or STM32L4
 
-  `dump:registers` - print all registers<br />
+  `dump:registers` - print all registers (halt program)<br />
+  `dump:register:{reg_name}` - print register (halt program)<br />
   `dump:flash` - print content of FLASH memory<br />
   `dump:sram` - print content of SRAM memory<br />
   `dump:mem:{addr}:{size}` - print content of memory<br />
@@ -40,6 +41,9 @@ The main goal is to bring flashing support and very basic debugging (something i
   `write:reg:{addr}:{data}` - write 32 bit register
 
   `upload:mem:{addr}:{file}` - upload file into memory (not for writing FLASH, only SRAM or registers)
+
+  `control:halt` - halt program<br />
+  `control:run` - run program
 
 ### Examples:
 ```

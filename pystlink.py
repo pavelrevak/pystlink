@@ -31,7 +31,8 @@ class App():
         print("  verbose:{level} - set verbose level from 0 - minimal to 3 - maximal (can also use between commands)")
         print("  cpu[:{cputype}] - connect and detect CPU, set expected cputype, eg: STM32F051R8 or STM32L4")
         print()
-        print("  dump:registers - print all registers")
+        print("  dump:registers - print all registers (halt program)")
+        print("  dump:register:{reg_name} - print register (halt program)")
         print("  dump:flash - print content of FLASH memory")
         print("  dump:sram - print content of SRAM memory")
         print("  dump:mem:{addr}:{size} - print content of memory")
@@ -46,6 +47,9 @@ class App():
         print("  write:reg:{addr}:{data} - write 32 bit register")
         print()
         print("  upload:mem:{addr}:{file} - upload file into memory (not for writing FLASH, only SRAM or registers)")
+        print()
+        print("  control:halt - halt program")
+        print("  control:run - run program")
         print()
         print("examples:")
         print("  %s help" % sys.argv[0])
@@ -91,6 +95,8 @@ class App():
         params = params[1:]
         if cmd == 'registers':
             self._stlink.dump_registers()
+        elif cmd == 'register' and params:
+            self._stlink.dump_register(params[0])
         elif cmd == 'flash':
             mem = self._stlink.read_flash()
             self.print_mem(mem)
@@ -164,6 +170,18 @@ class App():
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 
+    def parse_control(self, params):
+        if self._stlink is None or self._stlink._mcus is None:
+            raise lib.stlinkex.StlinkExceptionCpuNotSelected()
+        cmd = params[0]
+        params = params[1:]
+        if cmd == 'halt':
+            self._stlink.core_halt()
+        elif cmd == 'run':
+            self._stlink.core_run()
+        else:
+            raise lib.stlinkex.StlinkExceptionBadParam()
+
     def parse_cmd(self, params):
         cmd = params[0]
         params = params[1:]
@@ -183,6 +201,8 @@ class App():
             self.parse_write(params)
         elif cmd == 'upload' and params:
             self.parse_upload(params)
+        elif cmd == 'control' and params:
+            self.parse_control(params)
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 
