@@ -208,6 +208,7 @@ class TestStlinkStm32_get_mem(unittest.TestCase):
                 self._test.assertEqual(size % 4, 0)
                 if self._pointer is None:
                     self._pointer = addr
+                assert size <= 1024
                 self._test.assertEqual(addr, self._pointer)
                 self._pointer += size
                 old_index = self._index
@@ -217,6 +218,7 @@ class TestStlinkStm32_get_mem(unittest.TestCase):
                 self._test.assertNotEqual(size, 0)
                 if self._pointer is None:
                     self._pointer = addr
+                assert size <= 64
                 self._test.assertEqual(addr, self._pointer)
                 self._pointer += size
                 old_index = self._index
@@ -305,6 +307,18 @@ class TestStlinkStm32_get_mem(unittest.TestCase):
     def test_addr_0_size_2048(self):
         self._test_get_mem(0, 2048)
 
+    def test_addr_0_size_8192(self):
+        self._test_get_mem(0, 8192)
+
+    def test_addr_1_size_8192(self):
+        self._test_get_mem(1, 8192)
+
+    def test_addr_4095_size_8192(self):
+        self._test_get_mem(4095, 8192)
+
+    def test_addr_4096_size_8192(self):
+        self._test_get_mem(4096, 8192)
+
     def test_addr_1_size_1100(self):
         self._test_get_mem(1, 1100)
 
@@ -325,6 +339,7 @@ class TestStlinkStm32_set_mem(unittest.TestCase):
                 self._test.assertEqual(len(data) % 4, 0)
                 if self._pointer is None:
                     self._pointer = addr
+                assert len(data) <= 1024
                 self._test.assertEqual(addr, self._pointer)
                 self._pointer += len(data)
                 self._index += len(data)
@@ -332,6 +347,7 @@ class TestStlinkStm32_set_mem(unittest.TestCase):
                 self._test.assertNotEqual(len(data), 0)
                 if self._pointer is None:
                     self._pointer = addr
+                assert len(data) <= 64
                 self._test.assertEqual(addr, self._pointer)
                 self._pointer += len(data)
                 self._index += len(data)
@@ -414,6 +430,18 @@ class TestStlinkStm32_set_mem(unittest.TestCase):
 
     def test_addr_0_size_2048(self):
         self._test_set_mem(0, 2048)
+
+    def test_addr_0_size_8192(self):
+        self._test_set_mem(0, 8192)
+
+    def test_addr_1_size_8192(self):
+        self._test_set_mem(1, 8192)
+
+    def test_addr_4095_size_8192(self):
+        self._test_set_mem(4095, 8192)
+
+    def test_addr_4096_size_8192(self):
+        self._test_set_mem(4096, 8192)
 
     def test_addr_1_size_1100(self):
         self._test_set_mem(1, 1100)

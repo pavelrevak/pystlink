@@ -48,8 +48,12 @@ class App():
         print()
         print("  upload:mem:{addr}:{file} - upload file into memory (not for writing FLASH, only SRAM or registers)")
         print()
-        print("  control:halt - halt program")
-        print("  control:run - run program")
+        print("  control:reset - reset core")
+        print("  control:reset:halt - reset and halt core")
+        print("  control:halt - halt core")
+        print("  control:step - step core")
+        print("  control:run - run core")
+        print("  control:norun - don't run core when disconnecting from ST-Link")
         print()
         print("examples:")
         print("  %s help" % sys.argv[0])
@@ -57,6 +61,7 @@ class App():
         print("  %s verbose:2 cpu:STM32F051R8" % sys.argv[0])
         print("  %s verbose:0 cpu:STM32F03 dump:flash dump:sram" % sys.argv[0])
         print("  %s cpu dump:registers download:sram:aaa.bin download:flash:bbb.bin" % sys.argv[0])
+        print("  %s cpu control:norun control:reset:halt dump:register:pc control:step dump:registers" % sys.argv[0])
 
     def parse_cpu(self, params):
         cpu = None
@@ -98,10 +103,16 @@ class App():
         elif cmd == 'register' and params:
             self._stlink.dump_register(params[0])
         elif cmd == 'flash':
-            mem = self._stlink.read_flash()
+            if params:
+                mem = self._stlink.read_flash(int(params[0], 0))
+            else:
+                mem = self._stlink.read_flash()
             self.print_mem(mem)
         elif cmd == 'sram':
-            mem = self._stlink.read_sram()
+            if params:
+                mem = self._stlink.read_sram(int(params[0], 0))
+            else:
+                mem = self._stlink.read_sram()
             self.print_mem(mem)
         elif cmd == 'mem' and len(params) > 1:
             mem = self._stlink.get_mem(int(params[0], 0), int(params[1], 0))
@@ -175,10 +186,24 @@ class App():
             raise lib.stlinkex.StlinkExceptionCpuNotSelected()
         cmd = params[0]
         params = params[1:]
-        if cmd == 'halt':
+        if cmd == 'resetsys':
+            self._driver.debug_resetsys()
+        elif cmd == 'reset':
+            if params:
+                if params[0] == 'halt':
+                    self._stlink.core_reset_halt()
+                else:
+                    raise lib.stlinkex.StlinkExceptionBadParam()
+            else:
+                self._stlink.core_reset()
+        elif cmd == 'halt':
             self._stlink.core_halt()
+        elif cmd == 'step':
+            self._stlink.core_step()
         elif cmd == 'run':
             self._stlink.core_run()
+        elif cmd == 'norun':
+            self._stlink.set_norun()
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 
@@ -213,6 +238,7 @@ class App():
             return
         try:
             for arg in sys.argv[1:]:
+                self._dbg.debug('CMD: %s' % arg, 3)
                 try:
                     self.parse_cmd(arg.split(':'))
                 except lib.stlinkex.StlinkExceptionBadParam as e:

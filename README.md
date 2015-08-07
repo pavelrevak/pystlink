@@ -27,8 +27,8 @@ The main goal is to bring flashing support and very basic debugging (something i
 
   `dump:registers` - print all registers (halt program)<br />
   `dump:register:{reg_name}` - print register (halt program)<br />
-  `dump:flash` - print content of FLASH memory<br />
-  `dump:sram` - print content of SRAM memory<br />
+  `dump:flash[:{size}]` - print content of FLASH memory<br />
+  `dump:sram[:{size}]` - print content of SRAM memory<br />
   `dump:mem:{addr}:{size}` - print content of memory<br />
   `dump:reg:{addr}` - print content of 32 bit register<br />
   `dump:reg16:{addr}` - print content of 16 bit register<br />
@@ -42,8 +42,12 @@ The main goal is to bring flashing support and very basic debugging (something i
 
   `upload:mem:{addr}:{file}` - upload file into memory (not for writing FLASH, only SRAM or registers)
 
-  `control:halt` - halt program<br />
-  `control:run` - run program
+  `control:reset` - reset core<br />
+  `control:reset:halt` - reset and halt core<br />
+  `control:halt` - halt core<br />
+  `control:step` - step core<br />
+  `control:run` - run core<br />
+  `control:norun` - don't run core when disconnecting from ST-Link
 
 ### Examples:
 ```
@@ -51,6 +55,7 @@ pystlink.py cpu dump:mem:0x08000000:256
 pystlink.py verbose:2 cpu:STM32F051R8
 pystlink.py verbose:0 cpu:STM32F03 dump:flash dump:sram
 pystlink.py cpu dump:registers download:sram:aaa.bin download:flash:bbb.bin
+pystlink.py cpu control:norun control:reset:halt dump:register:pc control:step dump:registers
 ```
 
 ## Supported MCUs:

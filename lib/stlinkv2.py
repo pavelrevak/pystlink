@@ -113,6 +113,9 @@ class StlinkDriver():
     def enter_debug_swd(self):
         rx = self._connector.xfer([StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_APIV2_ENTER, StlinkDriver.STLINK_DEBUG_ENTER_SWD], rx_len=2)
 
+    def debug_resetsys(self):
+        rx = self._connector.xfer([StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_APIV2_RESETSYS], rx_len=2)
+
     def get_coreid(self):
         rx = self._connector.xfer([StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_READCOREID], rx_len=4)
         return int.from_bytes(rx[:4], byteorder='little')
@@ -156,6 +159,8 @@ class StlinkDriver():
             raise lib.stlinkex.StlinkException('get_mem32: Address must be in multiples of 4')
         if size % 4:
             raise lib.stlinkex.StlinkException('get_mem32: Size must be in multiples of 4')
+        if size > 1024:
+            raise lib.stlinkex.StlinkException('get_mem32: Size for reading is %d but maximum can be 1024' % size)
         cmd = [StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_READMEM_32BIT]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         cmd.extend(list(size.to_bytes(4, byteorder='little')))
@@ -172,6 +177,8 @@ class StlinkDriver():
         self._connector.xfer(cmd, data=data)
 
     def get_mem8(self, addr, size):
+        if size > 64:
+            raise lib.stlinkex.StlinkException('get_mem8: Size for reading is %d but maximum can be 64' % size)
         cmd = [StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_READMEM_8BIT]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         cmd.extend(list(size.to_bytes(4, byteorder='little')))

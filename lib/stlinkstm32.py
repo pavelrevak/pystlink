@@ -29,6 +29,8 @@ class StlinkStm32():
         self._eeprom_start = None
         self._eeprom_size = None
 
+        self._norun = False
+
     def read_version(self):
         ver = self._driver.get_version()
         self._ver_stlink = (ver >> 12) & 0xf
@@ -41,14 +43,31 @@ class StlinkStm32():
         self._voltage = self._driver.get_target_voltage()
         self._dbg.msg("SUPPLY: %.2fV" % self._voltage)
 
+    def core_reset(self):
+        self._driver.set_debugreg32(0xe000edfc, 0x00000000)
+        self._driver.set_debugreg32(0xe000ed0c, 0x05fa0004)
+        self._driver.get_debugreg32(0xe000ed0c)
+
+    def core_reset_halt(self):
+        self._driver.set_debugreg32(0xe000edf0, 0xa05f0003)
+        self._driver.set_debugreg32(0xe000edfc, 0x00000001)
+        self._driver.set_debugreg32(0xe000ed0c, 0x05fa0004)
+        self._driver.get_debugreg32(0xe000ed0c)
+
     def core_halt(self):
         self._driver.set_debugreg32(0xe000edf0, 0xa05f0003)
+
+    def core_step(self):
+        self._driver.set_debugreg32(0xe000edf0, 0xa05f0005)
 
     def core_run(self):
         self._driver.set_debugreg32(0xe000edf0, 0xa05f0001)
 
     def core_nodebug(self):
         self._driver.set_debugreg32(0xe000edf0, 0xa05f0000)
+
+    def set_norun(self):
+        self._norun = True
 
     def read_coreid(self):
         self._coreid = self._driver.get_coreid()
@@ -153,7 +172,8 @@ class StlinkStm32():
         self.print_mcu_info()
 
     def disconnect(self):
-        self.core_nodebug()
+        if not self._norun:
+            self.core_nodebug()
         self._driver.leave_state()
 
     def dump_registers(self):
@@ -178,7 +198,7 @@ class StlinkStm32():
             data = self._driver.get_mem8(addr, read_size)
         while True:
             self._dbg.bargraph_update(value=len(data))
-            read_size = min((size - len(data) & 0x0ffc), block_size)
+            read_size = min((size - len(data) & 0xfffffffc), block_size)
             if read_size == 0:
                 break
             data.extend(self._driver.get_mem32(addr + len(data), read_size))
@@ -199,7 +219,7 @@ class StlinkStm32():
             size = write_size
         while True:
             self._dbg.bargraph_update(value=size)
-            write_size = min((len(data) - size) & 0x0ffc, block_size)
+            write_size = min((len(data) - size) & 0xfffffffc, block_size)
             if write_size == 0:
                 break
             self._driver.set_mem32(addr + size, data[size:size + write_size])
@@ -209,10 +229,14 @@ class StlinkStm32():
         self._dbg.bargraph_done()
         return (addr, data)
 
-    def read_sram(self):
-        return self.get_mem32(self._sram_start, self._sram_size * 1024)
+    def read_sram(self, size=None):
+        if size is None:
+            size = self._sram_size * 1024
+        return self.get_mem(self._sram_start, size)
 
-    def read_flash(self):
-        return self.get_mem32(self._flash_start, self._flash_size * 1024)
+    def read_flash(self, size=None):
+        if size is None:
+            size = self._flash_size * 1024
+        return self.get_mem(self._flash_start, size)
 
 
