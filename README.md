@@ -1,15 +1,26 @@
 # PYSTLINK
 
-This is successful attempt to communicate with ST-Link/V2 in **python-v3**.
+This is small python application for communicating with **ST-Link/V2** and almost all STM32 MCUs. It has very simple command-line interface.
 
-## Goal
+## Features
 
-At this time it only detect MCU and dump or download registers and memory.
+- detect MCU
+- dump registers and memory
+- write registers
+- download memory to binary file
+- upload binary file into memory
+- basic runtime control: reset, halt, step, run
 
-The main goal is to bring flashing support and very basic debugging (something is right now) and maybe in future connection to GDB.
+### Planed features
+
+- flashing support
+- maybe in future connection to GDB
+- and maybe GUI
 
 ## Install
 
+- Need Linux or OS/X (Windows is not tested, but probably can work if there will be not installed USB drivers from ST)
+- Also need Python v3.x (tested with python-3.4) and [pyusbs](https://github.com/walac/pyusb)
 - Download and unpack or `git clone https://github.com/pavelrevak/pystlink.git`
 - Connect ST-LINK/V2, with latest firmware
 - Run `python3 pystlink.py help`
@@ -22,38 +33,39 @@ The main goal is to bring flashing support and very basic debugging (something i
 ### Commands:
   `help` - show help<br />
   `version` - show version<br />
-  `verbose:{level}` - set verbose level from 0 - minimal to 3 - maximal (can also use between commands)<br />
+  `v:{level}` - set verbose level from 0 - minimal to 3 - maximal (can also use between commands)<br />
   `cpu[:{cputype}]` - connect and detect CPU, set expected cputype, eg: STM32F051R8 or STM32L4
 
-  `dump:registers` - print all registers (halt program)<br />
-  `dump:register:{reg_name}` - print register (halt program)<br />
-  `dump:flash[:{size}]` - print content of FLASH memory<br />
-  `dump:sram[:{size}]` - print content of SRAM memory<br />
+  `dump:reg:all` - print all registers (halt core)<br />
+  `dump:reg:{reg_name}` - print register (halt core)<br />
+  `dump:reg:{addr}` - print content of 32 bit memory register<br />
+  `dump:reg16:{addr}` - print content of 16 bit memory register<br />
+  `dump:reg8:{addr}` - print content of 8 bit memory register<br />
   `dump:mem:{addr}:{size}` - print content of memory<br />
-  `dump:reg:{addr}` - print content of 32 bit register<br />
-  `dump:reg16:{addr}` - print content of 16 bit register<br />
-  `dump:reg8:{addr}` - print content of 8 bit register
+  `dump:flash[:{size}]` - print content of FLASH memory<br />
+  `dump:sram[:{size}]` - print content of SRAM memory
 
-  `download:mem:{addr}:{size}:{file}` - download memory into file<br />
-  `download:sram:{file}` - download SRAM into file<br />
-  `download:flash:{file}` - download FLASH into file
+  `download:mem:{addr}:{size}:{file}` - download memory into binary file<br />
+  `download:sram:{file}` - download SRAM into binary file<br />
+  `download:flash:{file}` - download FLASH into binary file
 
-  `write:reg:{addr}:{data}` - write 32 bit register
+  `write:reg:{reg_name}:{data}` - write register (halt core)<br />
+  `write:reg:{addr}:{data}` - write 32 bit memory register
 
   `upload:mem:{addr}:{file}` - upload file into memory (not for writing FLASH, only SRAM or registers)
 
-  `control:reset` - reset core<br />
-  `control:reset:halt` - reset and halt core<br />
-  `control:halt` - halt core<br />
-  `control:step` - step core<br />
-  `control:run` - run core<br />
-  `control:norun` - don't run core when disconnecting from ST-Link
+  `core:reset` - reset core<br />
+  `core:reset:halt` - reset and halt core<br />
+  `core:halt` - halt core<br />
+  `core:step` - step core<br />
+  `core:run` - run core<br />
+  `core:norun` - don't run core when disconnecting from ST-Link (when program end)
 
 ### Examples:
 ```
 pystlink.py cpu dump:mem:0x08000000:256
-pystlink.py verbose:2 cpu:STM32F051R8
-pystlink.py verbose:0 cpu:STM32F03 dump:flash dump:sram
+pystlink.py v:2 cpu:STM32F051R8
+pystlink.py v:0 cpu:STM32F03 dump:flash dump:sram
 pystlink.py cpu dump:registers download:sram:aaa.bin download:flash:bbb.bin
 pystlink.py cpu control:norun control:reset:halt dump:register:pc control:step dump:registers
 ```
@@ -68,9 +80,9 @@ some basic info about STM32 naming is in our WiKi: [STM32 coding matrix](https:/
 
 Code is under MIT license.
 
-In general, this program is allowed to use in commercial without any limitations, but if you make some changes or updates then will be nice to share it.
+In general, this program is allowed to use in commercial without any limitations, but if you make some changes or updates then will be nice to share it. Any damaged MCUs are on your risk.
 
-PYSTLINK is inspired by [OpenOCD](http://openocd.org/) and some info is from sniffed USB communication with [ST-LINK](http://www.st.com/web/en/catalog/tools/PF258168) program.
+PYSTLINK is inspired by [OpenOCD](http://openocd.org/), [STLINK](https://github.com/texane/stlink) and some info is from sniffed USB communication with [ST-LINK](http://www.st.com/web/en/catalog/tools/PF258168) program.
 
 ## TAGS
 ST-Link/V2, stlink, SWD, Python, STM32, debug, flash, USB

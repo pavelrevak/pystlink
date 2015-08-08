@@ -8,6 +8,8 @@ import lib.dbg
 
 
 class App():
+    REGISTERS = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'SP', 'LR', 'PC', 'PSR', 'MSP', 'PSP']
+
     def __init__(self):
         self._dbg = lib.dbg.Dbg(verbose=1)
         self._connector = None
@@ -28,42 +30,43 @@ class App():
         print("commands:")
         print("  help - show help")
         print("  version - show version")
-        print("  verbose:{level} - set verbose level from 0 - minimal to 3 - maximal (can also use between commands)")
+        print("  v:{level} - set verbose level from 0 - minimal to 3 - maximal (can also use between commands)")
         print("  cpu[:{cputype}] - connect and detect CPU, set expected cputype, eg: STM32F051R8 or STM32L4")
         print()
-        print("  dump:registers - print all registers (halt program)")
-        print("  dump:register:{reg_name} - print register (halt program)")
+        print("  dump:reg:all - print all registers (halt core)")
+        print("  dump:reg:{reg_name} - print register (halt core)")
+        print("  dump:reg:{addr} - print content of 32 bit memory register")
+        print("  dump:reg16:{addr} - print content of 16 bit memory register")
+        print("  dump:reg8:{addr} - print content of 8 bit memory register")
+        print("  dump:mem:{addr}:{size} - print content of memory")
         print("  dump:flash - print content of FLASH memory")
         print("  dump:sram - print content of SRAM memory")
-        print("  dump:mem:{addr}:{size} - print content of memory")
-        print("  dump:reg:{addr} - print content of 32 bit register")
-        print("  dump:reg16:{addr} - print content of 16 bit register")
-        print("  dump:reg8:{addr} - print content of 8 bit register")
         print()
         print("  download:mem:{addr}:{size}:{file} - download memory into file")
         print("  download:sram:{file} - download SRAM into file")
         print("  download:flash:{file} - download FLASH into file")
         print()
-        print("  write:reg:{addr}:{data} - write 32 bit register")
+        print("  write:reg:{reg_name}:{data} - write register (halt core)")
+        print("  write:reg:{addr}:{data} - write 32 bit memory register")
         print()
         print("  upload:mem:{addr}:{file} - upload file into memory (not for writing FLASH, only SRAM or registers)")
         print()
-        print("  control:reset - reset core")
-        print("  control:reset:halt - reset and halt core")
-        print("  control:halt - halt core")
-        print("  control:step - step core")
-        print("  control:run - run core")
-        print("  control:norun - don't run core when disconnecting from ST-Link")
+        print("  core:reset - reset core")
+        print("  core:reset:halt - reset and halt core")
+        print("  core:halt - halt core")
+        print("  core:step - step core")
+        print("  core:run - run core")
+        print("  core:norun - don't run core when disconnecting from ST-Link (when program end)")
         print()
         print("examples:")
         print("  %s help" % sys.argv[0])
         print("  %s cpu dump:mem:0x08000000:256" % sys.argv[0])
-        print("  %s verbose:2 cpu:STM32F051R8" % sys.argv[0])
-        print("  %s verbose:0 cpu:STM32F03 dump:flash dump:sram" % sys.argv[0])
-        print("  %s cpu dump:registers download:sram:aaa.bin download:flash:bbb.bin" % sys.argv[0])
-        print("  %s cpu control:norun control:reset:halt dump:register:pc control:step dump:registers" % sys.argv[0])
+        print("  %s v:2 cpu:STM32F051R8" % sys.argv[0])
+        print("  %s v:0 cpu:STM32F03 dump:flash dump:sram" % sys.argv[0])
+        print("  %s cpu dump:reg:all download:sram:aaa.bin download:flash:bbb.bin" % sys.argv[0])
+        print("  %s cpu core:norun core:reset:halt dump:register:pc core:step dump:reg:all" % sys.argv[0])
 
-    def parse_cpu(self, params):
+    def cmd_cpu(self, params):
         cpu = None
         if params:
             cpu = params[0]
@@ -93,15 +96,39 @@ class App():
             addr += len(chunk)
         print('  %08x' % addr)
 
-    def parse_dump(self, params):
+    def cmd_dump(self, params):
         if self._stlink is None or self._stlink._mcus is None:
             raise lib.stlinkex.StlinkExceptionCpuNotSelected()
         cmd = params[0]
         params = params[1:]
-        if cmd == 'registers':
-            self._stlink.dump_registers()
-        elif cmd == 'register' and params:
-            self._stlink.dump_register(params[0])
+        if (cmd == 'reg') and params:
+            if params[0].upper() in App.REGISTERS:
+                # register
+                self._stlink.core_halt()
+                reg = params[0].upper()
+                if reg not in App.REGISTERS:
+                    raise lib.stlinkex.StlinkException('Wrong register name')
+                print("  %3s: %08x" % (reg, self._driver.get_reg(App.REGISTERS.index(reg))))
+            elif params[0] == 'all':
+                self._stlink.core_halt()
+                for i in range(len(App.REGISTERS)):
+                    print("  %3s: %08x" % (App.REGISTERS[i], self._driver.get_reg(i)))
+            else:
+                # memory register
+                addr = int(params[0], 0)
+                reg = self._driver.get_debugreg32(addr)
+                print('  %08x: %08x' % (addr, reg))
+        elif cmd == 'reg16' and params:
+            addr = int(params[0], 0)
+            reg = self._driver.get_debugreg16(addr)
+            print('  %08x: %04x' % (addr, reg))
+        elif cmd == 'reg8' and params:
+            addr = int(params[0], 0)
+            reg = self._driver.get_debugreg8(addr)
+            print('  %08x: %02x' % (addr, reg))
+        elif cmd == 'mem' and len(params) > 1:
+            mem = self._stlink.get_mem(int(params[0], 0), int(params[1], 0))
+            self.print_mem(mem)
         elif cmd == 'flash':
             if params:
                 mem = self._stlink.read_flash(int(params[0], 0))
@@ -114,21 +141,6 @@ class App():
             else:
                 mem = self._stlink.read_sram()
             self.print_mem(mem)
-        elif cmd == 'mem' and len(params) > 1:
-            mem = self._stlink.get_mem(int(params[0], 0), int(params[1], 0))
-            self.print_mem(mem)
-        elif (cmd == 'reg' or cmd == 'reg32') and params:
-            addr = int(params[0], 0)
-            reg = self._driver.get_debugreg32(addr)
-            print('  %08x: %08x' % (addr, reg))
-        elif cmd == 'reg16' and params:
-            addr = int(params[0], 0)
-            reg = self._driver.get_debugreg16(addr)
-            print('  %08x: %04x' % (addr, reg))
-        elif cmd == 'reg8' and params:
-            addr = int(params[0], 0)
-            reg = self._driver.get_debugreg8(addr)
-            print('  %08x: %02x' % (addr, reg))
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 
@@ -141,7 +153,7 @@ class App():
         with open(filename, 'rb') as f:
             return list(f.read())
 
-    def parse_download(self, params):
+    def cmd_download(self, params):
         if self._stlink is None or self._stlink._mcus is None:
             raise lib.stlinkex.StlinkExceptionCpuNotSelected()
         cmd = params[0]
@@ -158,19 +170,28 @@ class App():
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 
-    def parse_write(self, params):
+    def cmd_write(self, params):
         if self._stlink is None or self._stlink._mcus is None:
             raise lib.stlinkex.StlinkExceptionCpuNotSelected()
         cmd = params[0]
         params = params[1:]
-        if (cmd == 'reg') and params and len(params) > 1:
-            addr = int(params[0], 0)
+        if (cmd == 'reg') and len(params) > 1:
             data = int(params[1], 0)
-            self._driver.set_debugreg32(addr, data)
+            if params[0].upper() in App.REGISTERS:
+                # register
+                self._stlink.core_halt()
+                reg = params[0].upper()
+                if reg not in App.REGISTERS:
+                    raise lib.stlinkex.StlinkException('Wrong register name')
+                self._driver.set_reg(App.REGISTERS.index(reg), data)
+            else:
+                # memory register
+                addr = int(params[0], 0)
+                self._driver.set_debugreg32(addr, data)
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 
-    def parse_upload(self, params):
+    def cmd_upload(self, params):
         if self._stlink is None or self._stlink._mcus is None:
             raise lib.stlinkex.StlinkExceptionCpuNotSelected()
         cmd = params[0]
@@ -181,7 +202,7 @@ class App():
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 
-    def parse_control(self, params):
+    def cmd_core(self, params):
         if self._stlink is None or self._stlink._mcus is None:
             raise lib.stlinkex.StlinkExceptionCpuNotSelected()
         cmd = params[0]
@@ -207,27 +228,27 @@ class App():
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 
-    def parse_cmd(self, params):
+    def cmd(self, params):
         cmd = params[0]
         params = params[1:]
         if cmd == 'help':
             self.print_help()
         elif cmd == 'version':
             self.print_version()
-        elif cmd == 'verbose' and params:
+        elif cmd == 'v' and params:
             self._dbg.set_verbose(int(params[0]))
         elif cmd == 'cpu':
-            self.parse_cpu(params)
+            self.cmd_cpu(params)
         elif cmd == 'dump' and params:
-            self.parse_dump(params)
+            self.cmd_dump(params)
         elif cmd == 'download' and params:
-            self.parse_download(params)
+            self.cmd_download(params)
         elif cmd == 'write' and params:
-            self.parse_write(params)
+            self.cmd_write(params)
         elif cmd == 'upload' and params:
-            self.parse_upload(params)
-        elif cmd == 'control' and params:
-            self.parse_control(params)
+            self.cmd_upload(params)
+        elif cmd == 'core' and params:
+            self.cmd_core(params)
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 
@@ -240,7 +261,7 @@ class App():
             for arg in sys.argv[1:]:
                 self._dbg.debug('CMD: %s' % arg, 3)
                 try:
-                    self.parse_cmd(arg.split(':'))
+                    self.cmd(arg.split(':'))
                 except lib.stlinkex.StlinkExceptionBadParam as e:
                     raise e.set_cmd(arg)
             self._dbg.debug('DONE', 2)

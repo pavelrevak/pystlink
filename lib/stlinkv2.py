@@ -154,6 +154,11 @@ class StlinkDriver():
         rx = self._connector.xfer(cmd, rx_len=8)
         return int.from_bytes(rx[4:8], byteorder='little')
 
+    def set_reg(self, reg, data):
+        cmd = [StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_APIV2_WRITEREG, reg]
+        cmd.extend(list(data.to_bytes(4, byteorder='little')))
+        self._connector.xfer(cmd, rx_len=2)
+
     def get_mem32(self, addr, size):
         if addr % 4:
             raise lib.stlinkex.StlinkException('get_mem32: Address must be in multiples of 4')
