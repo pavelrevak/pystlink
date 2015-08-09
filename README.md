@@ -14,6 +14,7 @@ This is small python application for communicating with **ST-Link/V2** and almos
 ### Planed features
 
 - flashing support
+- other file formats (srec, hex)
 - maybe in future connection to GDB
 - and maybe GUI
 
@@ -66,15 +67,18 @@ This is small python application for communicating with **ST-Link/V2** and almos
 pystlink.py cpu dump:mem:0x08000000:256
 pystlink.py v:2 cpu:STM32F051R8
 pystlink.py v:0 cpu:STM32F03 dump:flash dump:sram
-pystlink.py cpu dump:registers download:sram:aaa.bin download:flash:bbb.bin
-pystlink.py cpu control:norun control:reset:halt dump:register:pc control:step dump:registers
+pystlink.py cpu write:reg:0x48000018:0x00000100 dump:reg:0x48000014
+pystlink.py cpu download:sram:aaa.bin download:flash:bbb.bin
+pystlink.py cpu core:norun core:reset:halt dump:reg:pc core:step dump:reg:all
 ```
 
 ## Supported MCUs:
 
-Actually all ST32F and ST32L [MCU](http://www.st.com/web/en/catalog/mmc/FM141/SC1169).
+Currently all ST32F and ST32L [MCU](http://www.st.com/web/en/catalog/mmc/FM141/SC1169).
 
-some basic info about STM32 naming is in our WiKi: [STM32 coding matrix](https://github.com/pavelrevak/pystlink/wiki/STM32-coding-matrix)
+Not all MCUs are tested. Please report all problems.
+
+In WiKi is some basic info about STM32 naming: [STM32 coding matrix](https://github.com/pavelrevak/pystlink/wiki/STM32-coding-matrix)
 
 ## Legal
 

@@ -63,8 +63,9 @@ class App():
         print("  %s cpu dump:mem:0x08000000:256" % sys.argv[0])
         print("  %s v:2 cpu:STM32F051R8" % sys.argv[0])
         print("  %s v:0 cpu:STM32F03 dump:flash dump:sram" % sys.argv[0])
-        print("  %s cpu dump:reg:all download:sram:aaa.bin download:flash:bbb.bin" % sys.argv[0])
-        print("  %s cpu core:norun core:reset:halt dump:register:pc core:step dump:reg:all" % sys.argv[0])
+        print("  %s cpu dump:reg:0x48000014 write:reg:0x48000018:0x00000100 dump:reg:0x48000014" % sys.argv[0])
+        print("  %s cpu download:sram:aaa.bin download:flash:bbb.bin" % sys.argv[0])
+        print("  %s cpu core:norun core:reset:halt dump:reg:pc core:step dump:reg:all" % sys.argv[0])
 
     def cmd_cpu(self, params):
         cpu = None
