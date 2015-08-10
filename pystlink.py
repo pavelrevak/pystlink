@@ -56,16 +56,17 @@ class App():
         print("  core:halt - halt core")
         print("  core:step - step core")
         print("  core:run - run core")
-        print("  core:norun - don't run core when disconnecting from ST-Link (when program end)")
+        print()
+        print("  norun - don't run core when disconnecting from ST-Link (when program end)")
         print()
         print("examples:")
         print("  %s help" % sys.argv[0])
         print("  %s cpu dump:mem:0x08000000:256" % sys.argv[0])
         print("  %s v:2 cpu:STM32F051R8" % sys.argv[0])
         print("  %s v:0 cpu:STM32F03 dump:flash dump:sram" % sys.argv[0])
-        print("  %s cpu dump:reg:0x48000014 write:reg:0x48000018:0x00000100 dump:reg:0x48000014" % sys.argv[0])
+        print("  %s cpu write:reg:0x48000018:0x00000100 dump:reg:0x48000014" % sys.argv[0])
         print("  %s cpu download:sram:aaa.bin download:flash:bbb.bin" % sys.argv[0])
-        print("  %s cpu core:norun core:reset:halt dump:reg:pc core:step dump:reg:all" % sys.argv[0])
+        print("  %s cpu norun core:reset:halt dump:reg:pc core:step dump:reg:all" % sys.argv[0])
 
     def cmd_cpu(self, params):
         cpu = None
@@ -224,8 +225,6 @@ class App():
             self._stlink.core_step()
         elif cmd == 'run':
             self._stlink.core_run()
-        elif cmd == 'norun':
-            self._stlink.set_norun()
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 
@@ -250,6 +249,8 @@ class App():
             self.cmd_upload(params)
         elif cmd == 'core' and params:
             self.cmd_core(params)
+        elif cmd == 'norun':
+            self._stlink.set_norun()
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 

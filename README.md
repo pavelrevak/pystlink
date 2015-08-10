@@ -59,8 +59,9 @@ This is small python application for communicating with **ST-Link/V2** and almos
   `core:reset:halt` - reset and halt core<br />
   `core:halt` - halt core<br />
   `core:step` - step core<br />
-  `core:run` - run core<br />
-  `core:norun` - don't run core when disconnecting from ST-Link (when program end)
+  `core:run` - run core
+
+  `norun` - don't run core while disconnecting from ST-Link (when program end)
 
 ### Examples:
 ```
@@ -69,7 +70,7 @@ pystlink.py v:2 cpu:STM32F051R8
 pystlink.py v:0 cpu:STM32F03 dump:flash dump:sram
 pystlink.py cpu write:reg:0x48000018:0x00000100 dump:reg:0x48000014
 pystlink.py cpu download:sram:aaa.bin download:flash:bbb.bin
-pystlink.py cpu core:norun core:reset:halt dump:reg:pc core:step dump:reg:all
+pystlink.py cpu norun core:reset:halt dump:reg:pc core:step dump:reg:all
 ```
 
 ## Supported MCUs:
