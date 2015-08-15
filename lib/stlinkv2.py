@@ -1,7 +1,6 @@
 import lib.stlinkex
 
-
-class StlinkDriver():
+class Stlink():
     STLINK_GET_VERSION                  = 0xf1
     STLINK_DEBUG_COMMAND                = 0xf2
     STLINK_DFU_COMMAND                  = 0xf3
@@ -76,54 +75,88 @@ class StlinkDriver():
         # 5000:  798
     }
 
-    def __init__(self, connector, dbg):
+    def __init__(self, connector, dbg, swd_frequency=1800000):
         self._connector = connector
         self._dbg = dbg
-
-    def get_version(self):
-        rx = self._connector.xfer([StlinkDriver.STLINK_GET_VERSION, 0x80], rx_len=6)
-        return int.from_bytes(rx[:2], byteorder='big')
-
-    def leave_state(self):
-        rx = self._connector.xfer([StlinkDriver.STLINK_GET_CURRENT_MODE], rx_len=2)
-        if rx[0] == StlinkDriver.STLINK_MODE_DFU:
-            self._connector.xfer([StlinkDriver.STLINK_DFU_COMMAND, StlinkDriver.STLINK_DFU_EXIT])
-        if rx[0] == StlinkDriver.STLINK_MODE_DEBUG:
-            self._connector.xfer([StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_EXIT])
-        if rx[0] == StlinkDriver.STLINK_MODE_SWIM:
-            self._connector.xfer([StlinkDriver.STLINK_SWIM_COMMAND, StlinkDriver.STLINK_SWIM_EXIT])
-
-    def get_target_voltage(self):
+        self.read_version()
         self.leave_state()
-        rx = self._connector.xfer([StlinkDriver.STLINK_GET_TARGET_VOLTAGE], rx_len=8)
+        self.read_target_voltage()
+        self.set_swd_freq(swd_frequency)
+        self.enter_debug_swd()
+        self.read_coreid()
+
+    def read_version(self):
+        rx = self._connector.xfer([Stlink.STLINK_GET_VERSION, 0x80], rx_len=6)
+        ver = int.from_bytes(rx[:2], byteorder='big')
+        self._ver_stlink = (ver >> 12) & 0xf
+        self._ver_jtag = (ver >> 6) & 0x3f
+        self._ver_swim = ver & 0x3f
+        self._ver_api = 2 if self._ver_jtag > 11 else 1
+        self._ver_str = "V%d.J%d.S%d (API:v%d)" % (self._ver_stlink, self._ver_jtag, self._ver_swim, self._ver_api)
+
+    @property
+    def ver_stlink(self):
+        return self._ver_stlink
+    @property
+    def ver_jtag(self):
+        return self._ver_jtag
+    @property
+    def ver_swim(self):
+        return self._ver_swim
+    @property
+    def ver_api(self):
+        return self._ver_api
+    @property
+    def ver_str(self):
+        return self._ver_str
+
+    def read_target_voltage(self):
+        rx = self._connector.xfer([Stlink.STLINK_GET_TARGET_VOLTAGE], rx_len=8)
         a0 = int.from_bytes(rx[:4], byteorder='little')
         a1 = int.from_bytes(rx[4:8], byteorder='little')
-        if a0 != 0:
-            return 2 * a1 * 1.2 / a0
+        self._target_voltage = 2 * a1 * 1.2 / a0 if a0 != 0 else None
+
+    @property
+    def target_voltage(self):
+        return self._target_voltage
+
+    def read_coreid(self):
+        rx = self._connector.xfer([Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_READCOREID], rx_len=4)
+        self._coreid = int.from_bytes(rx[:4], byteorder='little')
+
+    @property
+    def coreid(self):
+        return self._coreid
+
+    def leave_state(self):
+        rx = self._connector.xfer([Stlink.STLINK_GET_CURRENT_MODE], rx_len=2)
+        if rx[0] == Stlink.STLINK_MODE_DFU:
+            self._connector.xfer([Stlink.STLINK_DFU_COMMAND, Stlink.STLINK_DFU_EXIT])
+        if rx[0] == Stlink.STLINK_MODE_DEBUG:
+            self._connector.xfer([Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_EXIT])
+        if rx[0] == Stlink.STLINK_MODE_SWIM:
+            self._connector.xfer([Stlink.STLINK_SWIM_COMMAND, Stlink.STLINK_SWIM_EXIT])
+
 
     def set_swd_freq(self, freq=1800000):
-        for f, d in StlinkDriver.STLINK_DEBUG_APIV2_SWD_SET_FREQ_MAP.items():
+        for f, d in Stlink.STLINK_DEBUG_APIV2_SWD_SET_FREQ_MAP.items():
             if freq >= f:
-                rx = self._connector.xfer([StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_APIV2_SWD_SET_FREQ, d], rx_len=2)
+                rx = self._connector.xfer([Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_APIV2_SWD_SET_FREQ, d], rx_len=2)
                 if rx[0] != 0x80:
                     raise lib.stlinkex.StlinkException("Error switching SWD frequency")
                 return
         raise lib.stlinkex.StlinkException("Selected SWD frequency is too low")
 
     def enter_debug_swd(self):
-        rx = self._connector.xfer([StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_APIV2_ENTER, StlinkDriver.STLINK_DEBUG_ENTER_SWD], rx_len=2)
+        rx = self._connector.xfer([Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_APIV2_ENTER, Stlink.STLINK_DEBUG_ENTER_SWD], rx_len=2)
 
     def debug_resetsys(self):
-        rx = self._connector.xfer([StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_APIV2_RESETSYS], rx_len=2)
-
-    def get_coreid(self):
-        rx = self._connector.xfer([StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_READCOREID], rx_len=4)
-        return int.from_bytes(rx[:4], byteorder='little')
+        rx = self._connector.xfer([Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_APIV2_RESETSYS], rx_len=2)
 
     def set_debugreg32(self, addr, data):
         if addr % 4:
             raise lib.stlinkex.StlinkException('get_mem_short address is not in multiples of 4')
-        cmd = [StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_APIV2_WRITEDEBUGREG]
+        cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_APIV2_WRITEDEBUGREG]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         cmd.extend(list(data.to_bytes(4, byteorder='little')))
         return self._connector.xfer(cmd, rx_len=2)
@@ -131,7 +164,7 @@ class StlinkDriver():
     def get_debugreg32(self, addr):
         if addr % 4:
             raise lib.stlinkex.StlinkException('get_mem_short address is not in multiples of 4')
-        cmd = [StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_APIV2_READDEBUGREG]
+        cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_APIV2_READDEBUGREG]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         rx = self._connector.xfer(cmd, rx_len=8)
         return int.from_bytes(rx[4:8], byteorder='little')
@@ -150,12 +183,12 @@ class StlinkDriver():
         return val & 0xff
 
     def get_reg(self, reg):
-        cmd = [StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_APIV2_READREG, reg]
+        cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_APIV2_READREG, reg]
         rx = self._connector.xfer(cmd, rx_len=8)
         return int.from_bytes(rx[4:8], byteorder='little')
 
     def set_reg(self, reg, data):
-        cmd = [StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_APIV2_WRITEREG, reg]
+        cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_APIV2_WRITEREG, reg]
         cmd.extend(list(data.to_bytes(4, byteorder='little')))
         self._connector.xfer(cmd, rx_len=2)
 
@@ -166,7 +199,7 @@ class StlinkDriver():
             raise lib.stlinkex.StlinkException('get_mem32: Size must be in multiples of 4')
         if size > 1024:
             raise lib.stlinkex.StlinkException('get_mem32: Size for reading is %d but maximum can be 1024' % size)
-        cmd = [StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_READMEM_32BIT]
+        cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_READMEM_32BIT]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         cmd.extend(list(size.to_bytes(4, byteorder='little')))
         return self._connector.xfer(cmd, rx_len=size)
@@ -176,7 +209,9 @@ class StlinkDriver():
             raise lib.stlinkex.StlinkException('set_mem32: Address must be in multiples of 4')
         if len(data) % 4:
             raise lib.stlinkex.StlinkException('set_mem32: Size must be in multiples of 4')
-        cmd = [StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_WRITEMEM_32BIT]
+        if len(data) > 1024:
+            raise lib.stlinkex.StlinkException('set_mem32: Size for writing is %d but maximum can be 1024' % len(data))
+        cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_WRITEMEM_32BIT]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         cmd.extend(list(len(data).to_bytes(4, byteorder='little')))
         self._connector.xfer(cmd, data=data)
@@ -184,13 +219,15 @@ class StlinkDriver():
     def get_mem8(self, addr, size):
         if size > 64:
             raise lib.stlinkex.StlinkException('get_mem8: Size for reading is %d but maximum can be 64' % size)
-        cmd = [StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_READMEM_8BIT]
+        cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_READMEM_8BIT]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         cmd.extend(list(size.to_bytes(4, byteorder='little')))
         return self._connector.xfer(cmd, rx_len=size)
 
     def set_mem8(self, addr, data):
-        cmd = [StlinkDriver.STLINK_DEBUG_COMMAND, StlinkDriver.STLINK_DEBUG_WRITEMEM_8BIT]
+        if len(data) > 64:
+            raise lib.stlinkex.StlinkException('set_mem8: Size for writing is %d but maximum can be 64' % len(data))
+        cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_WRITEMEM_8BIT]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         cmd.extend(list(len(data).to_bytes(4, byteorder='little')))
         self._connector.xfer(cmd, data=data)

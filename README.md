@@ -10,10 +10,11 @@ This is small python application for communicating with **ST-Link/V2** and almos
 - download memory to binary file
 - upload binary file into memory
 - basic runtime control: reset, halt, step, run
+- flashing support is actually **very experimental** and support only STM32F0xx MCUs
 
 ### Planed features
 
-- flashing support
+- complete flashing support
 - other file formats (srec, hex)
 - maybe in future connection to GDB
 - and maybe GUI
@@ -27,50 +28,57 @@ This is small python application for communicating with **ST-Link/V2** and almos
 - Run `python3 pystlink.py help`
 
 ## Help
-
-### Usage:
-  `pystlink.py [commands ...]`
-
-### Commands:
-  `help` - show help<br />
-  `version` - show version<br />
-  `v:{level}` - set verbose level from 0 - minimal to 3 - maximal (can also use between commands)<br />
-  `cpu[:{cputype}]` - connect and detect CPU, set expected cputype, eg: STM32F051R8 or STM32L4
-
-  `dump:reg:all` - print all registers (halt core)<br />
-  `dump:reg:{reg_name}` - print register (halt core)<br />
-  `dump:reg:{addr}` - print content of 32 bit memory register<br />
-  `dump:reg16:{addr}` - print content of 16 bit memory register<br />
-  `dump:reg8:{addr}` - print content of 8 bit memory register<br />
-  `dump:mem:{addr}:{size}` - print content of memory<br />
-  `dump:flash[:{size}]` - print content of FLASH memory<br />
-  `dump:sram[:{size}]` - print content of SRAM memory
-
-  `download:mem:{addr}:{size}:{file}` - download memory into binary file<br />
-  `download:sram:{file}` - download SRAM into binary file<br />
-  `download:flash:{file}` - download FLASH into binary file
-
-  `write:reg:{reg_name}:{data}` - write register (halt core)<br />
-  `write:reg:{addr}:{data}` - write 32 bit memory register
-
-  `upload:mem:{addr}:{file}` - upload file into memory (not for writing FLASH, only SRAM or registers)
-
-  `core:reset` - reset core<br />
-  `core:reset:halt` - reset and halt core<br />
-  `core:halt` - halt core<br />
-  `core:step` - step core<br />
-  `core:run` - run core
-
-  `norun` - don't run core while disconnecting from ST-Link (when program end)
-
-### Examples:
 ```
-pystlink.py cpu dump:mem:0x08000000:256
-pystlink.py v:2 cpu:STM32F051R8
-pystlink.py v:0 cpu:STM32F03 dump:flash dump:sram
-pystlink.py cpu write:reg:0x48000018:0x00000100 dump:reg:0x48000014
-pystlink.py cpu download:sram:aaa.bin download:flash:bbb.bin
-pystlink.py cpu norun core:reset:halt dump:reg:pc core:step dump:reg:all
+usage:
+  pystlink.py [options|verbose] [commands|verbose ...]
+
+options:
+  --help -h          show this help
+  --version -V       show version
+  --cpu -c {cputype} set expected cputype, eg: STM32F051R8 or STM32L4
+
+verbose:
+  all verbose modes can also use between any commands (to configure verbosity of any commands)
+  -q                 set quiet
+  -i                 set info (default)
+  -v                 set verbose
+  -d                 set debug
+
+commands:
+  dump:reg:all - print all registers (halt core)
+  dump:reg:{reg_name} - print register (halt core)
+  dump:reg:{addr} - print content of 32 bit memory register
+  dump:reg16:{addr} - print content of 16 bit memory register
+  dump:reg8:{addr} - print content of 8 bit memory register
+  dump:mem:{addr}:{size} - print content of memory
+  dump:flash[:{size}] - print content of FLASH memory
+  dump:sram[:{size}] - print content of SRAM memory
+
+  download:mem:{addr}:{size}:{file} - download memory into file
+  download:sram:{file} - download SRAM into file
+  download:flash:{file} - download FLASH into file
+
+  write:reg:{reg_name}:{data} - write register (halt core)
+  write:reg:{addr}:{data} - write 32 bit memory register
+
+  upload:mem:{addr}:{file} - upload file into memory (not for writing FLASH, only SRAM or registers)
+
+  core:reset - reset core
+  core:reset:halt - reset and halt core
+  core:halt - halt core
+  core:step - step core
+  core:run - run core
+
+  norun - don't run core when disconnecting from ST-Link (when program end)
+
+examples:
+  pystlink.py --help
+  pystlink.py -V --cpu STM32F051R8
+  pystlink.py -q --cpu STM32F03 dump:flash dump:sram
+  pystlink.py dump:mem:0x08000000:256
+  pystlink.py write:reg:0x48000018:0x00000100 dump:reg:0x48000014
+  pystlink.py download:sram:aaa.bin download:flash:bbb.bin
+  pystlink.py norun core:reset:halt dump:reg:pc core:step dump:reg:all
 ```
 
 ## Supported MCUs:

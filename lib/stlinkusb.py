@@ -12,7 +12,7 @@ class StlinkUsbConnector():
         if self._dev is None:
             raise lib.stlinkex.StlinkException('ST-LINK v2 not connected')
         self._dev.set_configuration()
-        self._dbg.debug("successfully connected to stlink", 2)
+        self._dbg.debug("successfully connected to stlink", level=3)
 
     def _write(self, data):
         self._dbg.debug("  USB > %s" % ' '.join(['%02x' % i for i in data]), level=3)
