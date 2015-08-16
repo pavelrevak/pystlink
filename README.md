@@ -65,7 +65,7 @@ commands:
   upload:mem:{addr}:{file} - upload file into memory (not for writing FLASH, only SRAM or registers)
 
   flash:erase - complete erase FLASH memory
-  flash:write:{file} - write file into FLASH memory
+  flash:write[:{addr}]:{file} - write file into FLASH memory
 
   core:reset - reset core
   core:reset:halt - reset and halt core

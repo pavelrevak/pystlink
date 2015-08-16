@@ -50,8 +50,8 @@ class PyStlink():
         print("  dump:sram[:{size}] - print content of SRAM memory")
         print()
         print("  download:mem:{addr}:{size}:{file} - download memory into file")
-        print("  download:sram:{file} - download SRAM into file")
-        print("  download:flash:{file} - download FLASH into file")
+        print("  download:sram[:{size}]:{file} - download SRAM into file")
+        print("  download:flash[:{size}]:{file} - download FLASH into file")
         print()
         print("  write:reg:{reg_name}:{data} - write register (halt core)")
         print("  write:reg:{addr}:{data} - write 32 bit memory register")
@@ -59,7 +59,7 @@ class PyStlink():
         print("  upload:mem:{addr}:{file} - upload file into memory (not for writing FLASH, only SRAM or registers)")
         print()
         print("  flash:erase - complete erase FLASH memory")
-        print("  flash:write:{file} - write file into FLASH memory")
+        print("  flash:write[:{addr}]:{file} - write file into FLASH memory")
         print()
         print("  core:reset - reset core")
         print("  core:reset:halt - reset and halt core")
@@ -205,6 +205,7 @@ class PyStlink():
         addr, data = mem
         with open(filename, 'wb') as f:
             f.write(bytes(data))
+            self._dbg.msg("Saved %d Bytes into %s file" % (len(data), filename))
 
     def read_file(self, filename, size=None):
         with open(filename, 'rb') as f:
@@ -310,8 +311,8 @@ class PyStlink():
             block_addr = int(params[0], 0) if params else None
             self._driver.flash_erase(block_addr)
         elif cmd == 'write' and params:
-            data = self.read_file(params[0])
-            start_addr = int(params[1], 0) if len(params) > 1 else None
+            data = self.read_file(params[-1])
+            start_addr = int(params[0], 0) if len(params) > 1 else None
             self._driver.flash_write(start_addr, data)
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
