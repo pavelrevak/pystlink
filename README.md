@@ -1,16 +1,17 @@
 # PYSTLINK
 
-This is small python application for communicating with **ST-Link/V2** and almost all STM32 MCUs. It has very simple command-line interface.
+Small python application for communicating with **ST-Link/V2** and almost all STM32 MCUs.
 
 ## Features
 
+- simple command line interface
 - detect MCU
 - dump registers and memory
 - write registers
 - download memory to binary file
 - upload binary file into memory
 - basic runtime control: reset, halt, step, run
-- flashing support is actually **very experimental** and support only STM32F0xx MCUs
+- flashing support is actually experimental and support only STM32F0xx MCUs
 
 ### Planed features
 
@@ -24,7 +25,7 @@ This is small python application for communicating with **ST-Link/V2** and almos
 - Need Linux or OS/X (Windows is not tested, but probably can work if there will be not installed USB drivers from ST)
 - Also need Python v3.x (tested with python-3.4) and [pyusbs](https://github.com/walac/pyusb)
 - Download and unpack or `git clone https://github.com/pavelrevak/pystlink.git`
-- Connect ST-LINK/V2, with **latest firmware**
+- Connect ST-LINK/V2, with [**latest firmware**](http://www.st.com/web/en/catalog/tools/PF258194)
 - Run `python3 pystlink.py --help`
 
 ## Help
@@ -62,6 +63,9 @@ commands:
   write:reg:{addr}:{data} - write 32 bit memory register
 
   upload:mem:{addr}:{file} - upload file into memory (not for writing FLASH, only SRAM or registers)
+
+  flash:erase - complete erase FLASH memory
+  flash:write:{file} - write file into FLASH memory
 
   core:reset - reset core
   core:reset:halt - reset and halt core

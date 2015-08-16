@@ -2,6 +2,7 @@ import sys
 import lib.stlinkusb
 import lib.stlinkv2
 import lib.stm32
+import lib.stm32f0
 import lib.stm32devices
 import lib.stlinkex
 import lib.dbg
@@ -56,6 +57,9 @@ class PyStlink():
         print("  write:reg:{addr}:{data} - write 32 bit memory register")
         print()
         print("  upload:mem:{addr}:{file} - upload file into memory (not for writing FLASH, only SRAM or registers)")
+        print()
+        print("  flash:erase - complete erase FLASH memory")
+        print("  flash:write:{file} - write file into FLASH memory")
         print()
         print("  core:reset - reset core")
         print("  core:reset:halt - reset and halt core")
@@ -149,7 +153,7 @@ class PyStlink():
 
     def load_driver(self):
         if self._mcus[0]['type'].startswith('STM32F0'):
-            self._driver = lib.stm32.Stm32F0(self._stlink, dbg=self._dbg)
+            self._driver = lib.stm32f0.Stm32F0(self._stlink, dbg=self._dbg)
         else:
             self._driver = lib.stm32.Stm32(self._stlink, dbg=self._dbg)
 

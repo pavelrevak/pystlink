@@ -42,8 +42,8 @@ class Dbg():
         self._newline = False
 
     def bargraph_start(self, msg, value_min=0, value_max=100, level=1):
-        # if self._verbose < level:
-        #     return
+        if self._verbose < level:
+            return
         self._bargraph_msg = msg
         self._bargraph_min = value_min
         self._bargraph_max = value_max
