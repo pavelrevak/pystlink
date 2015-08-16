@@ -57,7 +57,8 @@ class Stm32():
     def get_mem(self, addr, size, block_size=1024):
         if size == 0:
             return addr, []
-        self._dbg.bargraph_start('Reading memory', value_max=size)
+        if size >= 16384:
+            self._dbg.bargraph_start('Reading memory', value_max=size)
         data = []
         if addr % 4:
             read_size = min(4 - (addr % 4), size)
@@ -77,7 +78,8 @@ class Stm32():
     def set_mem(self, addr, data, block_size=1024):
         if len(data) == 0:
             return addr, []
-        self._dbg.bargraph_start('Writing memory', value_max=len(data))
+        if len(data) >= 16384:
+            self._dbg.bargraph_start('Writing memory', value_max=len(data))
         size = 0
         if addr % 4:
             write_size = min(4 - (addr % 4), len(data))

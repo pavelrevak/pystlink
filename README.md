@@ -24,8 +24,8 @@ This is small python application for communicating with **ST-Link/V2** and almos
 - Need Linux or OS/X (Windows is not tested, but probably can work if there will be not installed USB drivers from ST)
 - Also need Python v3.x (tested with python-3.4) and [pyusbs](https://github.com/walac/pyusb)
 - Download and unpack or `git clone https://github.com/pavelrevak/pystlink.git`
-- Connect ST-LINK/V2, with latest firmware
-- Run `python3 pystlink.py help`
+- Connect ST-LINK/V2, with **latest firmware**
+- Run `python3 pystlink.py --help`
 
 ## Help
 ```
