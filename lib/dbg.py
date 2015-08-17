@@ -58,7 +58,12 @@ class Dbg():
         if not self._bargraph_msg:
             return
         if percent is None:
-            percent = 100 * (value - self._bargraph_min) // (self._bargraph_max - self._bargraph_min)
+            if (self._bargraph_max - self._bargraph_min) > 0:
+                percent = 100 * (value - self._bargraph_min) // (self._bargraph_max - self._bargraph_min)
+            else:
+                percent = 0
+        if percent > 100:
+            percent = 100
         self.print_bargraph(percent)
 
     def bargraph_done(self):

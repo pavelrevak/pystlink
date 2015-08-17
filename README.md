@@ -11,7 +11,7 @@ Small python application for communicating with **ST-Link/V2** and almost all ST
 - download memory to binary file
 - upload binary file into memory
 - basic runtime control: reset, halt, step, run
-- flashing support is actually experimental and support only STM32F0xx MCUs
+- flashing support is actually experimental and support only STM32F0xx and STM32F4xx MCUs
 
 ### Planed features
 
@@ -64,8 +64,9 @@ commands:
 
   upload:mem:{addr}:{file} - upload file into memory (not for writing FLASH, only SRAM or registers)
 
-  flash:erase - complete erase FLASH memory
-  flash:write[:{addr}]:{file} - write file into FLASH memory
+  flash:erase - complete erase FLASH memory (mass erase)
+  flash:write[:verify][:{addr}]:{file} - write file into FLASH memory + optional verify
+  flash:erase:write[:verify][:{addr}]:{file} - erase only place where will be written program (faster)
 
   core:reset - reset core
   core:reset:halt - reset and halt core
@@ -83,6 +84,8 @@ examples:
   pystlink.py write:reg:0x48000018:0x00000100 dump:reg:0x48000014
   pystlink.py download:sram:aaa.bin download:flash:bbb.bin
   pystlink.py norun core:reset:halt dump:reg:pc core:step dump:reg:all
+  pystlink.py flash:erase:write:verify:app.bin
+  pystlink.py flash:erase flash:write:verify:0x0800f000:boot.bin
 ```
 
 ## Supported MCUs:

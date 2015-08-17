@@ -3,6 +3,7 @@ import lib.stlinkusb
 import lib.stlinkv2
 import lib.stm32
 import lib.stm32f0
+import lib.stm32f4
 import lib.stm32devices
 import lib.stlinkex
 import lib.dbg
@@ -58,8 +59,9 @@ class PyStlink():
         print()
         print("  upload:mem:{addr}:{file} - upload file into memory (not for writing FLASH, only SRAM or registers)")
         print()
-        print("  flash:erase - complete erase FLASH memory")
-        print("  flash:write[:{addr}]:{file} - write file into FLASH memory")
+        print("  flash:erase - complete erase FLASH memory (mass erase)")
+        print("  flash:write[:verify][:{addr}]:{file} - write file into FLASH memory + optional verify")
+        print("  flash:erase:write[:verify][:{addr}]:{file} - erase only place where will be written program (faster)")
         print()
         print("  core:reset - reset core")
         print("  core:reset:halt - reset and halt core")
@@ -77,6 +79,8 @@ class PyStlink():
         print("  %s write:reg:0x48000018:0x00000100 dump:reg:0x48000014" % sys.argv[0])
         print("  %s download:sram:aaa.bin download:flash:bbb.bin" % sys.argv[0])
         print("  %s norun core:reset:halt dump:reg:pc core:step dump:reg:all" % sys.argv[0])
+        print("  %s flash:erase:write:verify:app.bin" % sys.argv[0])
+        print("  %s flash:erase flash:verify:app.bin" % sys.argv[0])
         print()
 
     def find_mcus_by_core(self):
@@ -154,6 +158,8 @@ class PyStlink():
     def load_driver(self):
         if self._mcus[0]['type'].startswith('STM32F0'):
             self._driver = lib.stm32f0.Stm32F0(self._stlink, dbg=self._dbg)
+        elif self._mcus[0]['type'].startswith('STM32F4'):
+            self._driver = lib.stm32f4.Stm32F4(self._stlink, dbg=self._dbg)
         else:
             self._driver = lib.stm32.Stm32(self._stlink, dbg=self._dbg)
 
@@ -302,18 +308,41 @@ class PyStlink():
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 
+    def cmd_flash_write(self, params, erase=False):
+        verify = False
+        if params[0] == 'verify':
+            params = params[1:]
+            verify = True
+        data = self.read_file(params[-1])
+        if len(data) > self._flash_size * 1024:
+            raise lib.stlinkex.StlinkException('Error: selected file is bigger than FLASH size (%d B > %d B)' % (len(data), self._flash_size * 1024))
+        start_addr = int(params[0], 0) if len(params) > 1 else None
+        if start_addr is not None and (start_addr < lib.stm32.Stm32.FLASH_START):
+            raise lib.stlinkex.StlinkException('Error: selected address 0x%08x is out of FLASH space which starting at: 0x%08x' % (start_addr, lib.stm32.Stm32.FLASH_START))
+        if start_addr is not None and (start_addr + len(data)) > (lib.stm32.Stm32.FLASH_START + self._flash_size * 1024):
+            raise lib.stlinkex.StlinkException('Error: selected file is is too long to fit into FLASH space with selected address')
+        self._driver.flash_write(start_addr, data, erase=erase, verify=verify)
+
+    def cmd_flash_erase(self, params):
+        cmd = params[0]
+        params = params[1:]
+        if cmd == 'write':
+            self.cmd_flash_write(params, erase=True)
+        else:
+            raise lib.stlinkex.StlinkExceptionBadParam()
+
     def cmd_flash(self, params):
         if self._driver is None or not self.is_mcu_selected():
             raise lib.stlinkex.StlinkExceptionCpuNotSelected()
         cmd = params[0]
         params = params[1:]
         if cmd == 'erase':
-            block_addr = int(params[0], 0) if params else None
-            self._driver.flash_erase(block_addr)
+            if params:
+                self.cmd_flash_erase(params)
+            else:
+                self._driver.flash_erase()
         elif cmd == 'write' and params:
-            data = self.read_file(params[-1])
-            start_addr = int(params[0], 0) if len(params) > 1 else None
-            self._driver.flash_write(start_addr, data)
+            self.cmd_flash_write(params)
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 

@@ -129,8 +129,8 @@ class Stm32():
     def core_nodebug(self):
         self._stlink.set_debugreg32(Stm32.DHCSR_REG, Stm32.DHCSR_DEBUGDIS)
 
-    def flash_erase(self, addr):
+    def flash_erase(self, page_addr=None, sector=None, nodbg=False):
         raise lib.stlinkex.StlinkException('Erasing FLASH is not implemented for this MCU')
 
-    def flash_write(self, addr, data, block_size=1024):
+    def flash_write(self, addr, data, block_size=1024, erase=False, verify=False):
         raise lib.stlinkex.StlinkException('Programing FLASH is not implemented for this MCU')
