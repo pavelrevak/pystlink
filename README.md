@@ -1,10 +1,10 @@
 # PYSTLINK
 
-Small python application for communicating with **ST-Link/V2** and almost all STM32 MCUs.
+Small python application for communicating with **ST-Link/V2** and almost all **STM32** MCUs.
 
 ## Features
 
-- support Linux, Mac OS/X, Windows
+- support **Linux**, **Mac OS/X**, **Windows**
 - simple command line interface
 - detect MCU
 - dump registers and memory
@@ -36,7 +36,7 @@ Small python application for communicating with **ST-Link/V2** and almost all ST
 
 - [Download](https://github.com/pavelrevak/pystlink/archive/master.zip) and unpack or `git clone https://github.com/pavelrevak/pystlink.git`
 - Connect ST-LINK/V2, with [**latest firmware**](http://www.st.com/web/en/catalog/tools/PF258194)
-- Run `./pystlink.py --help` (or `python3 pystlink.py ...` - depends on installation of python)
+- Run `./pystlink.py --help` (or `python3 pystlink.py ...` - depend on python installation)
 
 ## Help
 ```
@@ -100,7 +100,9 @@ examples:
 
 ## Supported MCUs:
 
-Currently all ST32F and ST32L [MCU](http://www.st.com/web/en/catalog/mmc/FM141/SC1169).
+Currently all **ST32F** and **ST32L** [MCU](http://www.st.com/web/en/catalog/mmc/FM141/SC1169).
+
+FLASHing support is on **STM32F0** to **STM32F4((.
 
 Not all MCUs are tested. Please report all problems.
 
@@ -112,7 +114,7 @@ Code is under [MIT license](https://github.com/pavelrevak/pystlink/blob/master/L
 
 In general, this program is allowed to use in commercial and without any limitations, but if you make some changes or updates then will be nice to share it.
 
-PYSTLINK is inspired by [OpenOCD](http://openocd.org/), [STLINK](https://github.com/texane/stlink) and some info is from sniffed USB communication with [ST-LINK](http://www.st.com/web/en/catalog/tools/PF258168) program.
+PYSTLINK is inspired by [OpenOCD](http://openocd.org/), [STLINK](https://github.com/texane/stlink) and lot of info is from sniffed USB communication with [original ST-LINK](http://www.st.com/web/en/catalog/tools/PF258168) program.
 
 ## TAGS
-ST-Link/V2, stlink, SWD, Python, STM32, debug, flash, USB
+ST-Link/V2, stlink, SWD, Python, ARM, CortexM, STM32, debug, FLASH, USB
