@@ -134,5 +134,5 @@ class Stm32():
         raise lib.stlinkex.StlinkException('Erasing FLASH is not implemented for this MCU')
 
     def flash_write(self, addr, data, erase=False, verify=False, erase_sizes=None):
-        self._dbg.debug('Stm32.flash_write(0x%08x, [data:%dBytes], erase=%s, verify=%s, erase_sizes=%s)' % (addr, len(data), erase, verify, erase_sizes))
+        self._dbg.debug('Stm32.flash_write(%s, [data:%dBytes], erase=%s, verify=%s, erase_sizes=%s)' % (('0x%08x' % addr) if addr is not None else 'None', len(data), erase, verify, erase_sizes))
         raise lib.stlinkex.StlinkException('Programing FLASH is not implemented for this MCU')

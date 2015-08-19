@@ -71,7 +71,7 @@ class Flash():
     def erase_all(self):
         self._stlink.set_debugreg32(Flash.FLASH_CR_REG, Flash.FLASH_CR_MER_BIT)
         self._stlink.set_debugreg32(Flash.FLASH_CR_REG, Flash.FLASH_CR_MER_BIT | Flash.FLASH_CR_STRT_BIT)
-        self.wait_busy(0.2, 'Erasing FLASH')
+        self.wait_busy(2, 'Erasing FLASH')
 
     def erase_page(self, page_addr):
         self._stlink.set_debugreg32(Flash.FLASH_CR_REG, Flash.FLASH_CR_PER_BIT)
@@ -140,10 +140,12 @@ class Flash():
         self.end_of_operation(self._stlink.get_debugreg32(Flash.FLASH_SR_REG))
 
     def end_of_operation(self, status):
-        if not status & Flash.FLASH_SR_EOP_BIT:
+        if status != Flash.FLASH_SR_EOP_BIT:
             raise lib.stlinkex.StlinkException('Error writing FLASH with status (FLASH_SR) %08x' % status)
+        self._stlink.set_debugreg32(Flash.FLASH_SR_REG, status)
 
 
+# support STM32F0xx and also STM32F1xx
 class Stm32F0(lib.stm32.Stm32):
     def flash_erase_all(self):
         self._dbg.debug('Stm32F0.flash_erase_all()')

@@ -4,7 +4,7 @@ import lib.stlinkusb
 import lib.stlinkv2
 import lib.stm32
 import lib.stm32f0
-import lib.stm32f4
+import lib.stm32f2
 import lib.stm32devices
 import lib.stlinkex
 import lib.dbg
@@ -61,9 +61,9 @@ class PyStlink():
         print()
         print("  upload:mem:{addr}:{file} - upload file into memory (not for writing FLASH, only SRAM or registers)")
         print()
-        print("  flash:erase - complete erase FLASH memory (mass erase)")
+        print("  flash:erase - complete erase FLASH memory aka mass erase - (in some cases it can be faster than flash:erase:write:...)")
         print("  flash:write[:verify][:{addr}]:{file} - write file into FLASH memory + optional verify")
-        print("  flash:erase:write[:verify][:{addr}]:{file} - erase only place where will be written program (faster)")
+        print("  flash:erase:write[:verify][:{addr}]:{file} - erase only pages or sectors where will be written program + write... (faster)")
         print()
         print("  core:reset - reset core")
         print("  core:reset:halt - reset and halt core")
@@ -158,10 +158,17 @@ class PyStlink():
                 self._dbg.msg(" * Is recommended to select certain CPU with --cpu {cputype}. Now is used the smallest memory size.")
 
     def load_driver(self):
-        if self._mcus[0]['type'].startswith('STM32F0'):
+        mcu_type = self._mcus[0]['type']
+        if mcu_type.startswith('STM32F0'):
             self._driver = lib.stm32f0.Stm32F0(self._stlink, dbg=self._dbg)
-        elif self._mcus[0]['type'].startswith('STM32F4'):
-            self._driver = lib.stm32f4.Stm32F4(self._stlink, dbg=self._dbg)
+        elif mcu_type.startswith('STM32F1'):
+            self._driver = lib.stm32f0.Stm32F0(self._stlink, dbg=self._dbg)
+        elif mcu_type.startswith('STM32F2'):
+            self._driver = lib.stm32f2.Stm32F2(self._stlink, dbg=self._dbg)
+        elif mcu_type.startswith('STM32F3'):
+            self._driver = lib.stm32f0.Stm32F0(self._stlink, dbg=self._dbg)
+        elif mcu_type.startswith('STM32F4'):
+            self._driver = lib.stm32f2.Stm32F2(self._stlink, dbg=self._dbg)
         else:
             self._driver = lib.stm32.Stm32(self._stlink, dbg=self._dbg)
 
@@ -408,7 +415,9 @@ class PyStlink():
                 self._dbg.set_verbose(VERBOSE_CMDS[argv[0]])
                 argv = argv[1:]
         else:
-            self.print_help()
+            print("ST-Link/V2 for more info use:")
+            print("  %s --help" % sys.argv[0])
+            print("-----------------------------")
         try:
             if argv and (argv[0] in ['--cpu', '-c']):
                 argv = argv[1:]

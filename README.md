@@ -4,6 +4,7 @@ Small python application for communicating with **ST-Link/V2** and almost all ST
 
 ## Features
 
+- support Linux, Mac OS/X, Windows
 - simple command line interface
 - detect MCU
 - dump registers and memory
@@ -11,22 +12,31 @@ Small python application for communicating with **ST-Link/V2** and almost all ST
 - download memory to binary file
 - upload binary file into memory
 - basic runtime control: reset, halt, step, run
-- flashing support is actually experimental and support only STM32F0xx and STM32F4xx MCUs
+- supported MCUs for flashing: **STM32F0**, **STM32F1**, **STM32F2**, **STM32F3** and **STM32F4**
 
 ### Planed features
 
-- complete flashing support
-- other file formats (srec, hex)
+- flashing support for other MCU types (STM32F7, STM32L)
+- flashing information block (system memory, option bytes and OTP area)
+- connecting under RESET
+- other file formats (SREC, HEX)
 - maybe in future connection to GDB
 - and maybe GUI
 
 ## Install
 
-- Need Linux or OS/X (Windows is not tested, but probably can work if there will be **not** installed USB drivers from ST)
-- Also need **Python v3.x** (tested with python-3.4) and [**pyusbs**](https://github.com/walac/pyusb)
-- Download and unpack or `git clone https://github.com/pavelrevak/pystlink.git`
+### Requirements
+
+- **Python v3.x** (tested with python-3.4)
+- [**pyusbs**](https://github.com/walac/pyusb)
+- [**libusb**](http://libusbx.org) or other libusb
+  - for Windows copy libusb-1.0.dll into installed python: python/DLLs or into Windows/System32
+
+### pystlink
+
+- [Download](https://github.com/pavelrevak/pystlink/archive/master.zip) and unpack or `git clone https://github.com/pavelrevak/pystlink.git`
 - Connect ST-LINK/V2, with [**latest firmware**](http://www.st.com/web/en/catalog/tools/PF258194)
-- Run `python3 pystlink.py --help`
+- Run `./pystlink.py --help` (or `python3 pystlink.py ...` - depends on installation of python)
 
 ## Help
 ```
@@ -64,9 +74,9 @@ commands:
 
   upload:mem:{addr}:{file} - upload file into memory (not for writing FLASH, only SRAM or registers)
 
-  flash:erase - complete erase FLASH memory (mass erase)
+  flash:erase - complete erase FLASH memory aka mass erase - (in some cases it can be faster than flash:erase:write:...)
   flash:write[:verify][:{addr}]:{file} - write file into FLASH memory + optional verify
-  flash:erase:write[:verify][:{addr}]:{file} - erase only place where will be written program (faster)
+  flash:erase:write[:verify][:{addr}]:{file} - erase only pages or sectors where will be written program + write... (faster)
 
   core:reset - reset core
   core:reset:halt - reset and halt core

@@ -211,13 +211,15 @@ class Flash():
             raise lib.stlinkex.StlinkException('Error writing FLASH with status (FLASH_SR) %08x' % status)
 
 
-class Stm32F4(lib.stm32.Stm32):
+# support STM32F2xx and also STM32F4xx
+class Stm32F2(lib.stm32.Stm32):
     def flash_erase_all(self):
         flash = Flash(self, self._stlink, self._dbg)
         flash.erase_all()
         flash.lock()
 
     def flash_write(self, addr, data, erase=False, verify=False, erase_sizes=None):
+        self._dbg.debug('Stm32.flash_write(%s, [data:%dBytes], erase=%s, verify=%s, erase_sizes=%s)' % (('0x%08x' % addr) if addr is not None else 'None', len(data), erase, verify, erase_sizes))
         if addr is None:
             addr = self.FLASH_START
         if addr % 2:
@@ -232,7 +234,7 @@ class Stm32F4(lib.stm32.Stm32):
             else:
                 flash.erase_all()
         self._dbg.bargraph_start('Writing FLASH', value_min=addr, value_max=addr + len(data))
-        flash.init_write(Stm32F4.SRAM_START)
+        flash.init_write(Stm32F2.SRAM_START)
         while(data):
             self._dbg.bargraph_update(value=addr)
             block = data[:self._stlink.STLINK_MAXIMUM_TRANSFER_SIZE]
