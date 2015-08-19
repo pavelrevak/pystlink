@@ -31,10 +31,10 @@ class TestStm32(unittest.TestCase):
         # self._driver = lib.stm32.Stm32(stlink=None, dbg=dbg)
 
     # def test_read_version(self):
-    #     class MockDriver():
+    #     class MockStlink():
     #         def get_version(self):
     #             return 0x25c0
-    #     self._driver._driver = MockDriver()
+    #     self._driver._driver = MockStlink()
     #     self._driver.read_version()
     #     self.assertEqual(self._driver._ver_stlink, 2)
     #     self.assertEqual(self._driver._ver_jtag, 23)
@@ -42,10 +42,10 @@ class TestStm32(unittest.TestCase):
     #     self.assertEqual(self._driver._ver_api, 2)
 
     # def test_read_target_voltage(self):
-    #     class MockDriver():
+    #     class MockStlink():
     #         def get_target_voltage(self):
     #             return 3.3
-    #     self._driver._driver = MockDriver()
+    #     self._driver._driver = MockStlink()
     #     self._driver.read_target_voltage()
     #     self.assertEqual(self._driver._voltage, 3.3)
 
@@ -236,7 +236,8 @@ class TestStm32(unittest.TestCase):
 
 class TestStm32_get_mem(unittest.TestCase):
     def setUp(self):
-        class MockDriver():
+        class MockStlink():
+            STLINK_MAXIMUM_TRANSFER_SIZE = 1024
             def __init__(self, test):
                 self._test = test
                 self._pointer = None
@@ -263,7 +264,7 @@ class TestStm32_get_mem(unittest.TestCase):
                 old_index = self._index
                 self._index += size
                 return [i & 0xff for i in range(old_index, self._index)]
-        self._driver = lib.stm32.Stm32(stlink=MockDriver(self), dbg=MockDbg())
+        self._driver = lib.stm32.Stm32(stlink=MockStlink(self), dbg=MockDbg())
 
     def _test_get_mem(self, addr, size):
         addr, data = self._driver.get_mem(addr, size)
@@ -367,7 +368,8 @@ class TestStm32_get_mem(unittest.TestCase):
 
 class TestStm32_set_mem(unittest.TestCase):
     def setUp(self):
-        class MockDriver():
+        class MockStlink():
+            STLINK_MAXIMUM_TRANSFER_SIZE = 1024
             def __init__(self, test):
                 self._test = test
                 self._pointer = None
@@ -390,7 +392,7 @@ class TestStm32_set_mem(unittest.TestCase):
                 self._test.assertEqual(addr, self._pointer)
                 self._pointer += len(data)
                 self._index += len(data)
-        self._driver = lib.stm32.Stm32(stlink=MockDriver(self), dbg=MockDbg())
+        self._driver = lib.stm32.Stm32(stlink=MockStlink(self), dbg=MockDbg())
 
     def _test_set_mem(self, addr, size):
         self._driver.set_mem(addr, [i & 0xff for i in range(0, size)])
