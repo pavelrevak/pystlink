@@ -102,7 +102,7 @@ examples:
 
 Currently all **ST32F** and **ST32L** [MCU](http://www.st.com/web/en/catalog/mmc/FM141/SC1169).
 
-FLASHing support is on **STM32F0** to **STM32F4((.
+FLASHing support is on all **STM32F0** to **STM32F4**.
 
 Not all MCUs are tested. Please report all problems.
 
@@ -113,6 +113,8 @@ In WiKi is some basic info about STM32 naming: [STM32 coding matrix](https://git
 Code is under [MIT license](https://github.com/pavelrevak/pystlink/blob/master/LICENSE).
 
 In general, this program is allowed to use in commercial and without any limitations, but if you make some changes or updates then will be nice to share it.
+
+Support is only by [Issues tracker](https://github.com/pavelrevak/pystlink/issues)
 
 PYSTLINK is inspired by [OpenOCD](http://openocd.org/), [STLINK](https://github.com/texane/stlink) and lot of info is from sniffed USB communication with [original ST-LINK](http://www.st.com/web/en/catalog/tools/PF258168) program.
 
