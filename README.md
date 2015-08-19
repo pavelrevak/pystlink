@@ -22,8 +22,8 @@ Small python application for communicating with **ST-Link/V2** and almost all ST
 
 ## Install
 
-- Need Linux or OS/X (Windows is not tested, but probably can work if there will be not installed USB drivers from ST)
-- Also need Python v3.x (tested with python-3.4) and [pyusbs](https://github.com/walac/pyusb)
+- Need Linux or OS/X (Windows is not tested, but probably can work if there will be **not** installed USB drivers from ST)
+- Also need **Python v3.x** (tested with python-3.4) and [**pyusbs**](https://github.com/walac/pyusb)
 - Download and unpack or `git clone https://github.com/pavelrevak/pystlink.git`
 - Connect ST-LINK/V2, with [**latest firmware**](http://www.st.com/web/en/catalog/tools/PF258194)
 - Run `python3 pystlink.py --help`
@@ -98,9 +98,9 @@ In WiKi is some basic info about STM32 naming: [STM32 coding matrix](https://git
 
 ## Legal
 
-Code is under MIT license.
+Code is under [MIT license](https://github.com/pavelrevak/pystlink/blob/master/LICENSE).
 
-In general, this program is allowed to use in commercial without any limitations, but if you make some changes or updates then will be nice to share it. Any damaged MCUs are on your risk.
+In general, this program is allowed to use in commercial and without any limitations, but if you make some changes or updates then will be nice to share it.
 
 PYSTLINK is inspired by [OpenOCD](http://openocd.org/), [STLINK](https://github.com/texane/stlink) and some info is from sniffed USB communication with [ST-LINK](http://www.st.com/web/en/catalog/tools/PF258168) program.
 

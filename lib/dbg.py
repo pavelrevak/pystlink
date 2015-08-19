@@ -1,8 +1,9 @@
 import sys
+import time
 
 
 class Dbg():
-    def __init__(self, verbose, bar_length=50):
+    def __init__(self, verbose, bar_length=40):
         self._verbose = verbose
         self._bargraph_msg = None
         self._bargraph_min = None
@@ -10,8 +11,9 @@ class Dbg():
         self._newline = True
         self._bar_length = bar_length
         self._prev_percent = None
+        self._start_time = None
 
-    def debug(self, msg, level=2):
+    def debug(self, msg, level=3):
         if self._verbose >= level:
             if not self._newline:
                 sys.stderr.write('\n')
@@ -30,7 +32,7 @@ class Dbg():
     def print_bargraph(self, percent):
         if percent == self._prev_percent:
             return
-        bar = (percent * self._bar_length) // 100
+        bar = int(percent * self._bar_length) // 100
         sys.stderr.write('\r%s: [%s%s] %3d%%' % (
             self._bargraph_msg,
             '=' * bar,
@@ -42,6 +44,7 @@ class Dbg():
         self._newline = False
 
     def bargraph_start(self, msg, value_min=0, value_max=100, level=1):
+        self._start_time = time.time()
         if self._verbose < level:
             return
         self._bargraph_msg = msg
@@ -50,7 +53,7 @@ class Dbg():
         if not self._newline:
             sys.stderr.write('\n')
             self._newline = False
-        sys.stderr.write('%s')
+        sys.stderr.write('%s' % msg)
         self._prev_percent = None
         self._newline = False
 
@@ -69,7 +72,7 @@ class Dbg():
     def bargraph_done(self):
         if not self._bargraph_msg:
             return
-        sys.stderr.write('\r%s: [%s] done\n' % (self._bargraph_msg, '=' * self._bar_length))
+        sys.stderr.write('\r%s: [%s] done in %.2fs\n' % (self._bargraph_msg, '=' * self._bar_length, time.time() - self._start_time))
         sys.stderr.flush()
         self._newline = True
         self._bargraph_msg = None

@@ -75,6 +75,8 @@ class Stlink():
         # 5000:  798
     }
 
+    STLINK_MAXIMUM_TRANSFER_SIZE = 1024
+
     def __init__(self, connector, dbg, swd_frequency=1800000):
         self._connector = connector
         self._dbg = dbg

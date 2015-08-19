@@ -2,7 +2,8 @@ import time
 import lib.stm32
 import lib.stlinkex
 
-class Stm32F4(lib.stm32.Stm32):
+
+class Flash():
     FLASH_REG_BASE = 0x40023c00
     FLASH_KEYR_REG = FLASH_REG_BASE + 0x04
     FLASH_SR_REG = FLASH_REG_BASE + 0x0c
@@ -21,16 +22,13 @@ class Stm32F4(lib.stm32.Stm32):
 
     FLASH_SR_BUSY_BIT = 0x00010000
 
-    FLASH_WRITER_OFFSET = lib.stm32.Stm32.SRAM_START
-    FLASH_DATA_OFFSET = lib.stm32.Stm32.SRAM_START + 0x100
-
+    # PARAMS
+    # R0: SRC data
+    # R1: DST data
+    # R2: size
+    # R4: STM32_FLASH_SR
+    # R5: FLASH_SR_BUSY_BIT
     FLASH_WRITER_F4_CODE_X8 = [
-        # PARAMS
-        # R0: SRC data
-        # R1: DST data
-        # R2: size
-        # R4: STM32_FLASH_SR
-        # R5: FLASH_SR_BUSY_BIT
                     # write:
         0x03, 0x78, # 0x7803    # ldrh r3, [r0]
         0x0b, 0x70, # 0x700b    # strh r3, [r1]
@@ -48,14 +46,7 @@ class Stm32F4(lib.stm32.Stm32):
                     # exit:
         0x00, 0xbe, # 0xbe00    # bkpt 0x00
     ]
-
     FLASH_WRITER_F4_CODE_X16 = [
-        # PARAMS
-        # R0: SRC data
-        # R1: DST data
-        # R2: size
-        # R4: STM32_FLASH_SR
-        # R5: FLASH_SR_BUSY_BIT
                     # write:
         0x03, 0x88, # 0x8803    # ldrh r3, [r0]
         0x0b, 0x80, # 0x800b    # strh r3, [r1]
@@ -73,14 +64,7 @@ class Stm32F4(lib.stm32.Stm32):
                     # exit:
         0x00, 0xbe, # 0xbe00    # bkpt 0x00
     ]
-
     FLASH_WRITER_F4_CODE_X32 = [
-        # PARAMS
-        # R0: SRC data
-        # R1: DST data
-        # R2: size
-        # R4: STM32_FLASH_SR
-        # R5: FLASH_SR_BUSY_BIT
                     # write:
         0x03, 0x68, # 0x6803    # ldr r3, [r0]
         0x0b, 0x60, # 0x600b    # str r3, [r1]
@@ -99,162 +83,163 @@ class Stm32F4(lib.stm32.Stm32):
         0x00, 0xbe, # 0xbe00    # bkpt 0x00
     ]
 
-    SECTORS_TABLE = {
-        0: 16,
-        1: 16,
-        2: 16,
-        3: 16,
-        4: 64,
-        5: 128,
-        6: 128,
-        7: 128,
-        8: 128,
-        9: 128,
-        10: 128,
-        11: 128,
-    }
 
-    def address_to_sector(self, addr):
-        actual_addr = self.FLASH_START
-        sector = 0
-        if addr < actual_addr:
-            raise lib.stlinkex.StlinkException('Address is out of FLASH memory')
-        while True:
-            for sector, size in Stm32F4.SECTORS_TABLE.items():
-                actual_addr += size * 1024
-                if addr < actual_addr:
-                    return sector
+    VOLTAGE_DEPENDEND_PARAMS = [
+        {
+            'min_voltage': 2.7,
+            'max_mass_erase_time': 16,
+            'max_erase_time': {16: .5, 64: 1.1, 128: 2},
+            'FLASH_CR_PSIZE': FLASH_CR_PSIZE_X32,
+            'FLASH_WRITER_CODE': FLASH_WRITER_F4_CODE_X32,
+        }, {
+            'min_voltage': 2.1,
+            'max_mass_erase_time': 22,
+            'max_erase_time': {16: .6, 64: 1.4, 128: 2.6},
+            'FLASH_CR_PSIZE': FLASH_CR_PSIZE_X16,
+            'FLASH_WRITER_CODE': FLASH_WRITER_F4_CODE_X16,
+        }, {
+            'min_voltage': 1.8,
+            'max_mass_erase_time': 32,
+            'max_erase_time': {16: .8, 64: 2.4, 128: 4},
+            'FLASH_CR_PSIZE': FLASH_CR_PSIZE_X8,
+            'FLASH_WRITER_CODE': FLASH_WRITER_F4_CODE_X8,
+        }
+    ]
 
-    def flash_unlock(self):
-        self.core_reset_halt()
-        # programing locked
-        if self._stlink.get_debugreg32(Stm32F4.FLASH_CR_REG) & Stm32F4.FLASH_CR_LOCK_BIT:
-            # unlock keys
-            self._stlink.set_debugreg32(Stm32F4.FLASH_KEYR_REG, 0x45670123)
-            self._stlink.set_debugreg32(Stm32F4.FLASH_KEYR_REG, 0xcdef89ab)
-        # programing locked
-        if self._stlink.get_debugreg32(Stm32F4.FLASH_CR_REG) & Stm32F4.FLASH_CR_LOCK_BIT:
-            raise lib.stlinkex.StlinkException('Error unlocking FLASH')
+    def __init__(self, driver, stlink, dbg):
+        self._driver = driver
+        self._stlink = stlink
+        self._dbg = dbg
+        self._params = self.get_voltage_dependend_params()
+        self.unlock()
 
     def get_voltage_dependend_params(self):
         self._stlink.read_target_voltage()
-        if self._stlink.target_voltage > 2.7:
-            return {
-                'PSIZE': Stm32F4.FLASH_CR_PSIZE_X32,
-                'max_erase_time': 16000,
-                'FLASH_WRITER_CODE': Stm32F4.FLASH_WRITER_F4_CODE_X32,
-            }
-        if self._stlink.target_voltage > 2.1:
-            return {
-                'PSIZE': Stm32F4.FLASH_CR_PSIZE_X16,
-                'max_erase_time': 22000,
-                'FLASH_WRITER_CODE': Stm32F4.FLASH_WRITER_F4_CODE_X16,
-            }
-        if self._stlink.target_voltage > 1.8:
-            return {
-                'PSIZE': Stm32F4.FLASH_CR_PSIZE_X8,
-                'max_erase_time': 32000,
-                'FLASH_WRITER_CODE': Stm32F4.FLASH_WRITER_F4_CODE_X8,
-            }
+        for params in Flash.VOLTAGE_DEPENDEND_PARAMS:
+            if self._stlink.target_voltage > params['min_voltage']:
+                return params
         raise lib.stlinkex.StlinkException('Supply voltage is %.2fV, but minimum for FLASH program or erase is 1.8V' % self._stlink.target_voltage)
 
-    def flash_erase(self, page_addr=None, sector=None, nodbg=False):
-        params = self.get_voltage_dependend_params()
-        if not nodbg:
-            self._dbg.bargraph_start('Erasing FLASH', value_max=params['max_erase_time'])
-        self.flash_unlock()
-        if page_addr is not None:
-            raise lib.stlinkex.StlinkException('Erasing pages is not supported in this MCU')
-        if sector is not None:
-            # sector erase
-            self._stlink.set_debugreg32(Stm32F4.FLASH_CR_REG, Stm32F4.FLASH_CR_SER_BIT | params['PSIZE'] | (sector << Stm32F4.FLASH_CR_SNB_BITINDEX))
-            # sector erase start
-            self._stlink.set_debugreg32(Stm32F4.FLASH_CR_REG, Stm32F4.FLASH_CR_SER_BIT | Stm32F4.FLASH_CR_STRT_BIT)
-        else:
-            # mass erase
-            self._stlink.set_debugreg32(Stm32F4.FLASH_CR_REG, Stm32F4.FLASH_CR_MER_BIT | params['PSIZE'])
-            # mass erase start
-            self._stlink.set_debugreg32(Stm32F4.FLASH_CR_REG, Stm32F4.FLASH_CR_MER_BIT | Stm32F4.FLASH_CR_STRT_BIT)
-        # wait while busy
-        limit = 0
-        status = 0
-        # max_erase_time is from data sheet, but we are more pessimistic
-        while limit < params['max_erase_time'] * 2:
-            if not nodbg:
-                self._dbg.bargraph_update(value=limit)
-            limit += 100
-            # status
-            status = self._stlink.get_debugreg32(Stm32F4.FLASH_SR_REG)
-            # BUSY in status
-            if not status & Stm32F4.FLASH_SR_BUSY_BIT:
-                break
-            time.sleep(.1)
-        # end of operation in status
+    def unlock(self):
+        self._driver.core_reset_halt()
+        # programing locked
+        if self._stlink.get_debugreg32(Flash.FLASH_CR_REG) & Flash.FLASH_CR_LOCK_BIT:
+            # unlock keys
+            self._stlink.set_debugreg32(Flash.FLASH_KEYR_REG, 0x45670123)
+            self._stlink.set_debugreg32(Flash.FLASH_KEYR_REG, 0xcdef89ab)
+        # programing locked
+        if self._stlink.get_debugreg32(Flash.FLASH_CR_REG) & Flash.FLASH_CR_LOCK_BIT:
+            raise lib.stlinkex.StlinkException('Error unlocking FLASH')
+
+    def lock(self):
+        self._stlink.set_debugreg32(Flash.FLASH_CR_REG, Flash.FLASH_CR_LOCK_BIT)
+        self._driver.core_reset_halt()
+
+    def erase_all(self):
+        self._stlink.set_debugreg32(Flash.FLASH_CR_REG, Flash.FLASH_CR_MER_BIT)
+        self._stlink.set_debugreg32(Flash.FLASH_CR_REG, Flash.FLASH_CR_MER_BIT | Flash.FLASH_CR_STRT_BIT)
+        self.wait_busy(self._params['max_mass_erase_time'], 'Erasing FLASH')
+
+    def erase_sector(self, sector, erase_size):
+        flash_cr_value = Flash.FLASH_CR_SER_BIT
+        flash_cr_value |= self._params['FLASH_CR_PSIZE'] | (sector << Flash.FLASH_CR_SNB_BITINDEX)
+        self._stlink.set_debugreg32(Flash.FLASH_CR_REG, flash_cr_value)
+        self._stlink.set_debugreg32(Flash.FLASH_CR_REG, flash_cr_value | Flash.FLASH_CR_STRT_BIT)
+        self.wait_busy(self._params['max_erase_time'][erase_size])
+
+    def erase_sectors(self, flash_start, erase_sizes, addr, size):
+        erase_addr = flash_start
+        self._dbg.bargraph_start('Erasing FLASH', value_min=flash_start, value_max=flash_start + size)
+        sector = 0
+        while True:
+            for erase_size in erase_sizes:
+                if addr < erase_addr + erase_size * 1024:
+                    self._dbg.bargraph_update(value=erase_addr)
+                    self.erase_sector(sector, erase_size)
+                erase_addr += erase_size * 1024
+                if addr + size < erase_addr:
+                    self._dbg.bargraph_done()
+                    return
+                sector += 1
+
+    def init_write(self, sram_offset):
+        self._flash_writer_offset = sram_offset
+        self._flash_data_offset = sram_offset + 0x100
+        self._stlink.set_mem8(self._flash_writer_offset, self._params['FLASH_WRITER_CODE'])
+        # set configuration for flash writer
+        self._driver.set_reg('R4', Flash.FLASH_SR_REG)
+        self._driver.set_reg('R5', Flash.FLASH_SR_BUSY_BIT)
+        # enable PG
+        self._stlink.set_debugreg32(Flash.FLASH_CR_REG, Flash.FLASH_CR_PG_BIT | self._params['FLASH_CR_PSIZE'])
+
+    def write(self, addr, block):
+        # if all data are 0xff then will be not written
+        if min(block) == 0xff:
+            return
+        self._stlink.set_mem32(self._flash_data_offset, block)
+        self._driver.set_reg('PC', self._flash_writer_offset)
+        self._driver.set_reg('R0', self._flash_data_offset)
+        self._driver.set_reg('R1', addr)
+        self._driver.set_reg('R2', len(block))
+        self._driver.core_run()
+        self.wait_for_breakpoint(0.2)
+
+    def wait_busy(self, wait_time, bargraph_msg=None):
+        end_time = time.time() + wait_time * 1.5
+        if bargraph_msg:
+            self._dbg.bargraph_start(bargraph_msg, value_min=time.time(), value_max=time.time() + wait_time)
+        while time.time() < end_time:
+            if bargraph_msg:
+                self._dbg.bargraph_update(value=time.time())
+            status = self._stlink.get_debugreg32(Flash.FLASH_SR_REG)
+            if not status & Flash.FLASH_SR_BUSY_BIT:
+                self.end_of_operation(status)
+                if bargraph_msg:
+                    self._dbg.bargraph_done()
+                return
+            time.sleep(wait_time / 20)
+        raise lib.stlinkex.StlinkException('Operation timeout')
+
+    def wait_for_breakpoint(self, wait_time):
+        end_time = time.time() + wait_time
+        while time.time() < end_time and not self._stlink.get_debugreg32(lib.stm32.Stm32.DHCSR_REG) & lib.stm32.Stm32.DHCSR_STATUS_HALT_BIT:
+            time.sleep(wait_time / 20)
+        self.end_of_operation(self._stlink.get_debugreg32(Flash.FLASH_SR_REG))
+
+    def end_of_operation(self, status):
         if status:
-            raise lib.stlinkex.StlinkException('Error erasing FLASH with status (FLASH_SR) %08x' % status)
-        # disable erase and lock FLASH
-        self._stlink.set_debugreg32(Stm32F4.FLASH_CR_REG, Stm32F4.FLASH_CR_LOCK_BIT)
-        if not nodbg:
-            self._dbg.bargraph_done()
+            raise lib.stlinkex.StlinkException('Error writing FLASH with status (FLASH_SR) %08x' % status)
 
-    def flash_erase_sectors(self, addr, size):
-        sector = self.address_to_sector(addr)
-        last_sector = self.address_to_sector(addr + size - 1)
-        self._dbg.bargraph_start('Erasing FLASH', value_min=sector, value_max=last_sector + 1)
-        while sector <= last_sector:
-            self._dbg.bargraph_update(value=sector)
-            self.flash_erase(sector=sector, nodbg=True)
-            sector += 1
-        self._dbg.bargraph_done()
 
-    def flash_write(self, addr, data, block_size=1024, erase=False, verify=False):
-        params = self.get_voltage_dependend_params()
+class Stm32F4(lib.stm32.Stm32):
+    def flash_erase_all(self):
+        flash = Flash(self, self._stlink, self._dbg)
+        flash.erase_all()
+        flash.lock()
+
+    def flash_write(self, addr, data, erase=False, verify=False, erase_sizes=None):
         if addr is None:
             addr = self.FLASH_START
-        if addr % 4:
+        if addr % 2:
             raise lib.stlinkex.StlinkException('Address is not alligned')
-        while len(data) % 2:
-            data.append(0xff)
+        # align data
+        if len(data) % 4:
+            data.extend([0xff] * (4 - len(data) % 4))
+        flash = Flash(self, self._stlink, self._dbg)
         if erase:
-            self.flash_erase_sectors(addr, len(data))
+            if erase_sizes:
+                flash.erase_sectors(self.FLASH_START, erase_sizes, addr, len(data))
+            else:
+                flash.erase_all()
         self._dbg.bargraph_start('Writing FLASH', value_min=addr, value_max=addr + len(data))
-        self.flash_unlock()
-        self._stlink.set_mem8(Stm32F4.FLASH_WRITER_OFFSET, params['FLASH_WRITER_CODE'])
-        # set constants to flash writer
-        self.set_reg('R4', Stm32F4.FLASH_SR_REG)
-        self.set_reg('R5', Stm32F4.FLASH_SR_BUSY_BIT)
-        # enable PG
-        self._stlink.set_debugreg32(Stm32F4.FLASH_CR_REG, Stm32F4.FLASH_CR_PG_BIT | params['PSIZE'])
+        flash.init_write(Stm32F4.SRAM_START)
         while(data):
             self._dbg.bargraph_update(value=addr)
-            block = data[:block_size]
-            data = data[block_size:]
-            if min(block) != 0xff:
-                # align block
-                if len(block) % 4:
-                    block.extend([0xff] * (4 - len(block) % 4))
-                # upload data for flashing
-                self._stlink.set_mem32(Stm32F4.FLASH_DATA_OFFSET, block)
-                self.set_reg('PC', Stm32F4.FLASH_WRITER_OFFSET)
-                self.set_reg('R0', Stm32F4.FLASH_DATA_OFFSET)
-                self.set_reg('R1', addr)
-                self.set_reg('R2', len(block))
-                # run flash writer
-                self.core_run()
-                # wait for breakpoint
-                limit = 100
-                while limit > 0 and not self._stlink.get_debugreg32(Stm32F4.DHCSR_REG) & Stm32F4.DHCSR_STATUS_HALT_BIT:
-                    limit -= 1
-                    time.sleep(0.01)
-                # status
-                status = self._stlink.get_debugreg32(Stm32F4.FLASH_SR_REG)
-                # end of operation in status
-                if status:
-                    raise lib.stlinkex.StlinkException('Error writing FLASH with status (FLASH_SR) %08x' % status)
+            block = data[:self._stlink.STLINK_MAXIMUM_TRANSFER_SIZE]
+            data = data[self._stlink.STLINK_MAXIMUM_TRANSFER_SIZE:]
+            flash.write(addr, block)
             if verify and block != self._stlink.get_mem32(addr, len(block)):
                 raise lib.stlinkex.StlinkException('Verify error at block address: 0x%08x' % addr)
-            addr += block_size
-        self.core_reset()
-        # disable PG and lock FLASH
-        self._stlink.set_debugreg32(Stm32F4.FLASH_CR_REG, Stm32F4.FLASH_CR_LOCK_BIT)
+            addr += len(block)
+        flash.lock()
         self._dbg.bargraph_done()

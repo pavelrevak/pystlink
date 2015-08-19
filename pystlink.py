@@ -1,4 +1,5 @@
 import sys
+import time
 import lib.stlinkusb
 import lib.stlinkv2
 import lib.stm32
@@ -11,6 +12,7 @@ import lib.dbg
 
 class PyStlink():
     def __init__(self, dbg):
+        self._start_time = time.time()
         self._dbg = dbg
         self._connector = None
         self._stlink = None
@@ -80,7 +82,7 @@ class PyStlink():
         print("  %s download:sram:aaa.bin download:flash:bbb.bin" % sys.argv[0])
         print("  %s norun core:reset:halt dump:reg:pc core:step dump:reg:all" % sys.argv[0])
         print("  %s flash:erase:write:verify:app.bin" % sys.argv[0])
-        print("  %s flash:erase flash:verify:app.bin" % sys.argv[0])
+        print("  %s flash:erase flash:verify:0x08010000:boot.bin" % sys.argv[0])
         print()
 
     def find_mcus_by_core(self):
@@ -215,7 +217,9 @@ class PyStlink():
 
     def read_file(self, filename, size=None):
         with open(filename, 'rb') as f:
-            return list(f.read())
+            data = list(f.read())
+            self._dbg.msg("Loaded %d Bytes from %s file" % (len(data), filename))
+            return data
 
     def cmd_dump(self, params):
         if self._driver is None or not self.is_mcu_selected():
@@ -321,7 +325,7 @@ class PyStlink():
             raise lib.stlinkex.StlinkException('Error: selected address 0x%08x is out of FLASH space which starting at: 0x%08x' % (start_addr, lib.stm32.Stm32.FLASH_START))
         if start_addr is not None and (start_addr + len(data)) > (lib.stm32.Stm32.FLASH_START + self._flash_size * 1024):
             raise lib.stlinkex.StlinkException('Error: selected file is is too long to fit into FLASH space with selected address')
-        self._driver.flash_write(start_addr, data, erase=erase, verify=verify)
+        self._driver.flash_write(start_addr, data, erase=erase, verify=verify, erase_sizes=self._mcus_by_devid['erase_sizes'])
 
     def cmd_flash_erase(self, params):
         cmd = params[0]
@@ -340,7 +344,7 @@ class PyStlink():
             if params:
                 self.cmd_flash_erase(params)
             else:
-                self._driver.flash_erase()
+                self._driver.flash_erase_all()
         elif cmd == 'write' and params:
             self.cmd_flash_write(params)
         else:
@@ -435,7 +439,7 @@ class PyStlink():
                 self._stlink.leave_state()
             except lib.stlinkex.StlinkException as e:
                 self._dbg.debug(e, level=0)
-        self._dbg.debug('DONE', 2)
+        self._dbg.debug('DONE in %0.2fs' % (time.time() - self._start_time) , 1)
 
 
 if __name__ == "__main__":

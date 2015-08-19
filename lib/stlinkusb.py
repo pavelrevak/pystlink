@@ -15,14 +15,14 @@ class StlinkUsbConnector():
         self._dbg.debug("Successfully connected to stlink", level=3)
 
     def _write(self, data):
-        self._dbg.debug("  USB > %s" % ' '.join(['%02x' % i for i in data]), level=3)
+        # self._dbg.debug("  USB > %s" % ' '.join(['%02x' % i for i in data]), level=3)
         count = self._dev.write(0x02, data, 0)
         if count != len(data):
             raise lib.stlinkex.StlinkException("Error, only %d bytes was transmitted to ST-LINK instead of expected %d" % (count, len(data)))
 
     def _read(self, size):
         data = self._dev.read(0x81, size, 0).tolist()
-        self._dbg.debug("  USB < %s" % ' '.join(['%02x' % i for i in data]), level=3)
+        # self._dbg.debug("  USB < %s" % ' '.join(['%02x' % i for i in data]), level=3)
         return data
 
     def xfer(self, cmd, data=None, rx_len=None):

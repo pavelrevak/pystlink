@@ -40,6 +40,7 @@ class Stm32():
         return [(reg, self.get_reg(reg)) for reg in Stm32.REGISTERS]
 
     def get_reg(self, reg):
+        self._dbg.debug('Stm32.get_reg(%s)' % reg)
         reg = reg.upper()
         if reg in Stm32.REGISTERS:
             index = Stm32.REGISTERS.index(reg)
@@ -47,13 +48,15 @@ class Stm32():
         raise lib.stlinkex.StlinkException('Wrong register name')
 
     def set_reg(self, reg, value):
+        self._dbg.debug('Stm32.set_reg(%s, 0x%08x)' % (reg, value))
         reg = reg.upper()
         if reg in Stm32.REGISTERS:
             index = Stm32.REGISTERS.index(reg)
             return self._stlink.set_reg(index, value)
         raise lib.stlinkex.StlinkException('Wrong register name')
 
-    def get_mem(self, addr, size, block_size=1024):
+    def get_mem(self, addr, size):
+        self._dbg.debug('Stm32.get_mem(0x%08x, %d)' % (addr, size))
         if size == 0:
             return addr, []
         if size >= 16384:
@@ -64,7 +67,7 @@ class Stm32():
             data = self._stlink.get_mem8(addr, read_size)
         while True:
             self._dbg.bargraph_update(value=len(data))
-            read_size = min((size - len(data) & 0xfffffffc), block_size)
+            read_size = min((size - len(data) & 0xfffffffc), self._stlink.STLINK_MAXIMUM_TRANSFER_SIZE)
             if read_size == 0:
                 break
             data.extend(self._stlink.get_mem32(addr + len(data), read_size))
@@ -74,7 +77,8 @@ class Stm32():
         self._dbg.bargraph_done()
         return (addr, data)
 
-    def set_mem(self, addr, data, block_size=1024):
+    def set_mem(self, addr, data):
+        self._dbg.debug('Stm32.set_mem(0x%08x, [data:%dBytes])' % (addr, len(data)))
         if len(data) == 0:
             return addr, []
         if len(data) >= 16384:
@@ -86,7 +90,7 @@ class Stm32():
             size = write_size
         while True:
             self._dbg.bargraph_update(value=size)
-            write_size = min((len(data) - size) & 0xfffffffc, block_size)
+            write_size = min((len(data) - size) & 0xfffffffc, self._stlink.STLINK_MAXIMUM_TRANSFER_SIZE)
             if write_size == 0:
                 break
             self._stlink.set_mem32(addr + size, data[size:size + write_size])
@@ -96,41 +100,39 @@ class Stm32():
         self._dbg.bargraph_done()
         return (addr, data)
 
-    # def read_sram(self, size=None):
-    #     if size is None:
-    #         size = self._sram_size * 1024
-    #     return self.get_mem(Stm32.SRAM_START, size)
-
-    # def read_flash(self, size=None):
-    #     if size is None:
-    #         size = self._flash_size * 1024
-    #     return self.get_mem(Stm32.FLASH_START, size)
-
     def core_reset(self):
+        self._dbg.debug('Stm32.core_reset()')
         self._stlink.set_debugreg32(Stm32.DEMCR_REG, Stm32.DEMCR_RUN_AFTER_RESET)
         self._stlink.set_debugreg32(Stm32.AIRCR_REG, Stm32.AIRCR_SYSRESETREQ)
         self._stlink.get_debugreg32(Stm32.AIRCR_REG)
 
     def core_reset_halt(self):
+        self._dbg.debug('Stm32.core_reset_halt()')
         self._stlink.set_debugreg32(Stm32.DHCSR_REG, Stm32.DHCSR_HALT)
         self._stlink.set_debugreg32(Stm32.DEMCR_REG, Stm32.DEMCR_HALT_AFTER_RESET)
         self._stlink.set_debugreg32(Stm32.AIRCR_REG, Stm32.AIRCR_SYSRESETREQ)
         self._stlink.get_debugreg32(Stm32.AIRCR_REG)
 
     def core_halt(self):
+        self._dbg.debug('Stm32.core_halt()')
         self._stlink.set_debugreg32(Stm32.DHCSR_REG, Stm32.DHCSR_HALT)
 
     def core_step(self):
+        self._dbg.debug('Stm32.core_step()')
         self._stlink.set_debugreg32(Stm32.DHCSR_REG, Stm32.DHCSR_STEP)
 
     def core_run(self):
+        self._dbg.debug('Stm32.core_run()')
         self._stlink.set_debugreg32(Stm32.DHCSR_REG, Stm32.DHCSR_DEBUGEN)
 
     def core_nodebug(self):
+        self._dbg.debug('Stm32.core_nodebug()')
         self._stlink.set_debugreg32(Stm32.DHCSR_REG, Stm32.DHCSR_DEBUGDIS)
 
-    def flash_erase(self, page_addr=None, sector=None, nodbg=False):
+    def flash_erase_all(self):
+        self._dbg.debug('Stm32.flash_mass_erase()')
         raise lib.stlinkex.StlinkException('Erasing FLASH is not implemented for this MCU')
 
-    def flash_write(self, addr, data, block_size=1024, erase=False, verify=False):
+    def flash_write(self, addr, data, erase=False, verify=False, erase_sizes=None):
+        self._dbg.debug('Stm32.flash_write(0x%08x, [data:%dBytes], erase=%s, verify=%s, erase_sizes=%s)' % (addr, len(data), erase, verify, erase_sizes))
         raise lib.stlinkex.StlinkException('Programing FLASH is not implemented for this MCU')
