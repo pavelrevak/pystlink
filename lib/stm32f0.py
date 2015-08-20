@@ -145,7 +145,7 @@ class Flash():
         self._stlink.set_debugreg32(Flash.FLASH_SR_REG, status)
 
 
-# support STM32F0xx and also STM32F1xx
+# support STM32F0xx, STM32F1xx and also STM32F2xx
 class Stm32F0(lib.stm32.Stm32):
     def flash_erase_all(self):
         self._dbg.debug('Stm32F0.flash_erase_all()')

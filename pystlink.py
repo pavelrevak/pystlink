@@ -11,6 +11,8 @@ import lib.dbg
 
 
 class PyStlink():
+    CPUID_REG = 0xe000ed00
+
     def __init__(self, dbg):
         self._start_time = time.time()
         self._dbg = dbg
@@ -86,8 +88,7 @@ class PyStlink():
         print()
 
     def find_mcus_by_core(self):
-        CPUID_REG = 0xe000ed00
-        cpuid = self._stlink.get_debugreg32(CPUID_REG)
+        cpuid = self._stlink.get_debugreg32(PyStlink.CPUID_REG)
         self._dbg.msg("CPUID:  %08x" % cpuid, 2)
         partno = 0xfff & (cpuid >> 4)
         for mcu_core in lib.stm32devices.DEVICES:
@@ -158,16 +159,10 @@ class PyStlink():
                 self._dbg.msg(" * Is recommended to select certain CPU with --cpu {cputype}. Now is used the smallest memory size.")
 
     def load_driver(self):
-        mcu_type = self._mcus[0]['type']
-        if mcu_type.startswith('STM32F0'):
+        flash_driver = self._mcus['flash_driver']
+        if flash_driver == 'STM32F0':
             self._driver = lib.stm32f0.Stm32F0(self._stlink, dbg=self._dbg)
-        elif mcu_type.startswith('STM32F1'):
-            self._driver = lib.stm32f0.Stm32F0(self._stlink, dbg=self._dbg)
-        elif mcu_type.startswith('STM32F2'):
-            self._driver = lib.stm32f2.Stm32F2(self._stlink, dbg=self._dbg)
-        elif mcu_type.startswith('STM32F3'):
-            self._driver = lib.stm32f0.Stm32F0(self._stlink, dbg=self._dbg)
-        elif mcu_type.startswith('STM32F4'):
+        elif flash_driver == 'STM32F2':
             self._driver = lib.stm32f2.Stm32F2(self._stlink, dbg=self._dbg)
         else:
             self._driver = lib.stm32.Stm32(self._stlink, dbg=self._dbg)
