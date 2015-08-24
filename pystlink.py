@@ -77,7 +77,7 @@ class PyStlink():
         print()
         print("examples:")
         print("  %s --help" % sys.argv[0])
-        print("  %s -V --cpu STM32F051R8" % sys.argv[0])
+        print("  %s -v --cpu STM32F051R8" % sys.argv[0])
         print("  %s -q --cpu STM32F03 dump:flash dump:sram" % sys.argv[0])
         print("  %s dump:mem:0x08000000:256" % sys.argv[0])
         print("  %s write:reg:0x48000018:0x00000100 dump:reg:0x48000014" % sys.argv[0])
@@ -162,6 +162,8 @@ class PyStlink():
         flash_driver = self._mcus_by_devid['flash_driver']
         if flash_driver == 'STM32F0':
             self._driver = lib.stm32f0.Stm32F0(self._stlink, dbg=self._dbg)
+        elif flash_driver == 'STM32F1XL':
+            self._driver = lib.stm32f0.Stm32F1XL(self._stlink, dbg=self._dbg)
         elif flash_driver == 'STM32F2':
             self._driver = lib.stm32f2.Stm32F2(self._stlink, dbg=self._dbg)
         else:

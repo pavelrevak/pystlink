@@ -5,10 +5,15 @@ import lib.stlinkex
 
 class Flash():
     FLASH_REG_BASE = 0x40022000
-    FLASH_KEYR_REG = FLASH_REG_BASE + 0x04
-    FLASH_SR_REG = FLASH_REG_BASE + 0x0c
-    FLASH_CR_REG = FLASH_REG_BASE + 0x10
-    FLASH_AR_REG = FLASH_REG_BASE + 0x14
+    FLASH_REG_BASE_STEP = 0x40
+    FLASH_KEYR_INDEX = 0x04
+    FLASH_SR_INDEX = 0x0c
+    FLASH_CR_INDEX = 0x10
+    FLASH_AR_INDEX = 0x14
+    FLASH_KEYR_REG = FLASH_REG_BASE + FLASH_KEYR_INDEX
+    FLASH_SR_REG = FLASH_REG_BASE + FLASH_SR_INDEX
+    FLASH_CR_REG = FLASH_REG_BASE + FLASH_CR_INDEX
+    FLASH_AR_REG = FLASH_REG_BASE + FLASH_AR_INDEX
 
     FLASH_CR_LOCK_BIT = 0x00000080
     FLASH_CR_PG_BIT = 0x00000001
@@ -44,11 +49,17 @@ class Flash():
         0x00, 0xbe, # 0xbe00    # bkpt 0x00
     ]
 
-    def __init__(self, driver, stlink, dbg):
+    def __init__(self, driver, stlink, dbg, bank=0):
         self._driver = driver
         self._stlink = stlink
         self._dbg = dbg
         self._stlink.read_target_voltage()
+        if bank > 0:
+            reg_bank = Flash.FLASH_REG_BASE + Flash.FLASH_REG_BASE_STEP * bank
+            Flash.FLASH_KEYR_REG = reg_bank + Flash.FLASH_KEYR_INDEX
+            Flash.FLASH_SR_REG = reg_bank + Flash.FLASH_SR_INDEX
+            Flash.FLASH_CR_REG = reg_bank + Flash.FLASH_CR_INDEX
+            Flash.FLASH_AR_REG = reg_bank + Flash.FLASH_AR_INDEX
         if self._stlink.target_voltage < 2.0:
             raise lib.stlinkex.StlinkException('Supply voltage is %.2fV, but minimum for FLASH program or erase is 2.0V' % self._stlink.target_voltage)
         self.unlock()
@@ -147,22 +158,20 @@ class Flash():
 
 # support STM32F0xx, STM32F1xx and also STM32F3xx
 class Stm32F0(lib.stm32.Stm32):
-    def flash_erase_all(self):
-        self._dbg.debug('Stm32F0.flash_erase_all()')
-        flash = Flash(self, self._stlink, self._dbg)
+    def _flash_erase_all(self, bank=0):
+        flash = Flash(self, self._stlink, self._dbg, bank=bank)
         flash.erase_all()
         flash.lock()
 
-    def flash_write(self, addr, data, erase=False, verify=False, erase_sizes=None):
-        self._dbg.debug('Stm32.flash_write(%s, [data:%dBytes], erase=%s, verify=%s, erase_sizes=%s)' % (('0x%08x' % addr) if addr is not None else 'None', len(data), erase, verify, erase_sizes))
-        if addr is None:
-            addr = self.FLASH_START
-        if addr % 2:
-            raise lib.stlinkex.StlinkException('Address is not alligned')
+    def flash_erase_all(self):
+        self._dbg.debug('Stm32F0.flash_erase_all()')
+        self._flash_erase_all()
+
+    def _flash_write(self, addr, data, erase=False, verify=False, erase_sizes=None, bank=0):
         # align data
         if len(data) % 4:
             data.extend([0xff] * (4 - len(data) % 4))
-        flash = Flash(self, self._stlink, self._dbg)
+        flash = Flash(self, self._stlink, self._dbg, bank=bank)
         if erase:
             if erase_sizes:
                 flash.erase_pages(self.FLASH_START, erase_sizes, addr, len(data))
@@ -180,3 +189,39 @@ class Stm32F0(lib.stm32.Stm32):
             addr += len(block)
         flash.lock()
         self._dbg.bargraph_done()
+
+    def flash_write(self, addr, data, erase=False, verify=False, erase_sizes=None):
+        self._dbg.debug('Stm32F0.flash_write(%s, [data:%dBytes], erase=%s, verify=%s, erase_sizes=%s)' % (('0x%08x' % addr) if addr is not None else 'None', len(data), erase, verify, erase_sizes))
+        if addr is None:
+            addr = self.FLASH_START
+        if addr % 2:
+            raise lib.stlinkex.StlinkException('Address is not alligned')
+        self._flash_write(addr, data, erase=erase, verify=verify, erase_sizes=erase_sizes)
+
+
+# support STM32F1xxxF and STM32F1xxxG (XL)
+class Stm32F1XL(Stm32F0):
+    BANK_SIZE = 512 * 1024
+
+    def flash_erase_all(self):
+        self._dbg.debug('Stm32F1.flash_erase_all()')
+        self._flash_erase_all(bank=0)
+        self._flash_erase_all(bank=1)
+
+    def flash_write(self, addr, data, erase=False, verify=False, erase_sizes=None):
+        self._dbg.debug('Stm32F1.flash_write(%s, [data:%dBytes], erase=%s, verify=%s, erase_sizes=%s)' % (('0x%08x' % addr) if addr is not None else 'None', len(data), erase, verify, erase_sizes))
+        if addr is None:
+            addr = self.FLASH_START
+        if addr % 2:
+            raise lib.stlinkex.StlinkException('Address is not alligned')
+        if (addr - self.FLASH_START) + len(data) <= Stm32F1XL.BANK_SIZE:
+            self._flash_write(addr, data, erase=erase, verify=verify, erase_sizes=erase_sizes, bank=0)
+        elif (addr - self.FLASH_START) > Stm32F1XL.BANK_SIZE:
+            self._flash_write(addr, data, erase=erase, verify=verify, erase_sizes=erase_sizes, bank=1)
+        else:
+            addr_bank1 = addr
+            addr_bank2 = self.FLASH_START + Stm32F1XL.BANK_SIZE
+            data_bank1 = data[:(Stm32F1XL.BANK_SIZE - (addr - self.FLASH_START))]
+            data_bank2 = data[(Stm32F1XL.BANK_SIZE - (addr - self.FLASH_START)):]
+            self._flash_write(addr_bank1, data_bank1, erase=erase, verify=verify, erase_sizes=erase_sizes, bank=0)
+            self._flash_write(addr_bank2, data_bank2, erase=erase, verify=verify, erase_sizes=erase_sizes, bank=1)

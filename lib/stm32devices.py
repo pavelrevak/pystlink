@@ -258,7 +258,7 @@ DEVICES = [
             {
                 'dev_id': 0x430,
                 'flash_size_reg': 0x1ffff7e0,
-                'flash_driver': 'STM32F0',
+                'flash_driver': 'STM32F1XL',
                 'erase_sizes': (2, ),
                 'devices': [
                     {'type': 'STM32F101xF', 'flash_size':  768, 'sram_size':  80, 'eeprom_size':  0, 'freq':  36},
