@@ -23,6 +23,13 @@ Small python application for communicating with **ST-Link/V2** and almost all **
 - maybe in future connection to GDB
 - and maybe GUI
 
+### Known bugs
+
+Instead of all unimplemented features there are these known bugs:
+
+- do not write second bank of FLASH in STM32F10x XL devices (with 768KB and 1024KB FLASH)
+- do not stop WATCHDOGs in debug mode
+
 ## Install
 
 ### Requirements
