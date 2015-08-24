@@ -446,8 +446,8 @@ DEVICES = [
             {
                 'dev_id': 0x449,
                 'flash_size_reg': 0x1ff0f442,
-                'flash_driver': None,
-                'erase_sizes': None,
+                'flash_driver': 'STM32F2',
+                'erase_sizes': (32, 32, 32, 32, 128, 256, 256, 256, ),
                 'devices': [
                     {'type': 'STM32F745xE', 'flash_size':  512, 'sram_size': 320, 'eeprom_size':  0, 'freq': 216},
                     {'type': 'STM32F745xG', 'flash_size': 1024, 'sram_size': 320, 'eeprom_size':  0, 'freq': 216},
