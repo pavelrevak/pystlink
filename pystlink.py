@@ -159,7 +159,7 @@ class PyStlink():
                 self._dbg.msg(" * Is recommended to select certain CPU with --cpu {cputype}. Now is used the smallest memory size.")
 
     def load_driver(self):
-        flash_driver = self._mcus['flash_driver']
+        flash_driver = self._mcus_by_devid['flash_driver']
         if flash_driver == 'STM32F0':
             self._driver = lib.stm32f0.Stm32F0(self._stlink, dbg=self._dbg)
         elif flash_driver == 'STM32F2':
