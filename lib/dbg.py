@@ -13,7 +13,7 @@ class Dbg():
         self._prev_percent = None
         self._start_time = None
 
-    def debug(self, msg, level=3):
+    def _msg(self, msg, level):
         if self._verbose >= level:
             if not self._newline:
                 sys.stderr.write('\n')
@@ -21,13 +21,23 @@ class Dbg():
             sys.stderr.write('%s\n' % msg)
             sys.stderr.flush()
 
-    def msg(self, msg, level=1):
-        if self._verbose >= level:
-            if not self._newline:
-                sys.stderr.write('\n')
-                self._newline = True
-            sys.stderr.write('%s\n' % msg)
-            sys.stderr.flush()
+    def debug(self, msg, level=3):
+        self._msg(msg, level)
+
+    def verbose(self, msg, level=2):
+        self._msg(msg, level)
+
+    def info(self, msg, level=1):
+        self._msg(msg, level)
+
+    def message(self, msg, level=0):
+        self._msg(msg, level)
+
+    def error(self, msg, level=0):
+        self._msg('*** %s ***' % msg, level)
+
+    def warning(self, msg, level=0):
+        self._msg(' * %s' % msg, level)
 
     def print_bargraph(self, percent):
         if percent == self._prev_percent:

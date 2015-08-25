@@ -3,8 +3,8 @@ import time
 import lib.stlinkusb
 import lib.stlinkv2
 import lib.stm32
-import lib.stm32f0
-import lib.stm32f2
+import lib.stm32fp
+import lib.stm32fs
 import lib.stm32devices
 import lib.stlinkex
 import lib.dbg
@@ -89,7 +89,7 @@ class PyStlink():
 
     def find_mcus_by_core(self):
         cpuid = self._stlink.get_debugreg32(PyStlink.CPUID_REG)
-        self._dbg.msg("CPUID:  %08x" % cpuid, 2)
+        self._dbg.verbose("CPUID:  %08x" % cpuid)
         partno = 0xfff & (cpuid >> 4)
         for mcu_core in lib.stm32devices.DEVICES:
             if mcu_core['part_no'] == partno:
@@ -99,7 +99,7 @@ class PyStlink():
 
     def find_mcus_by_devid(self):
         idcode = self._stlink.get_debugreg32(self._mcus_by_core['idcode_reg'])
-        self._dbg.msg("IDCODE: %08x" % idcode, 2)
+        self._dbg.verbose("IDCODE: %08x" % idcode)
         devid = 0xfff & idcode
         for mcu_devid in self._mcus_by_core['devices']:
             if mcu_devid['dev_id'] == devid:
@@ -144,28 +144,28 @@ class PyStlink():
         # will be used the smallest of all (worst case)
         self._sram_size = min([mcu['sram_size'] for mcu in self._mcus])
         self._eeprom_size = min([mcu['eeprom_size'] for mcu in self._mcus])
-        self._dbg.msg("SRAM:   %dKB" % self._sram_size)
+        self._dbg.info("SRAM:   %dKB" % self._sram_size)
         if self._eeprom_size:
-            self._dbg.msg("EEPROM: %dKB" % self._eeprom_size)
+            self._dbg.info("EEPROM: %dKB" % self._eeprom_size)
         if len(self._mcus) > 1:
             diff = False
             if self._sram_size != max([mcu['sram_size'] for mcu in self._mcus]):
                 diff = True
-                self._dbg.msg(" * Detected CPUs have different SRAM sizes.")
+                self._dbg.warning("Detected CPUs have different SRAM sizes.")
             if self._eeprom_size != max([mcu['eeprom_size'] for mcu in self._mcus]):
                 diff = True
-                self._dbg.msg(" * Detected CPUs have different EEPROM sizes.")
+                self._dbg.warning("Detected CPUs have different EEPROM sizes.")
             if diff:
-                self._dbg.msg(" * Is recommended to select certain CPU with --cpu {cputype}. Now is used the smallest memory size.")
+                self._dbg.warning("Is recommended to select certain CPU with --cpu {cputype}. Now is used the smallest memory size.")
 
     def load_driver(self):
         flash_driver = self._mcus_by_devid['flash_driver']
         if flash_driver == 'STM32F0':
-            self._driver = lib.stm32f0.Stm32F0(self._stlink, dbg=self._dbg)
+            self._driver = lib.stm32fp.Stm32FP(self._stlink, dbg=self._dbg)
         elif flash_driver == 'STM32F1XL':
-            self._driver = lib.stm32f0.Stm32F1XL(self._stlink, dbg=self._dbg)
+            self._driver = lib.stm32fp.Stm32FPXL(self._stlink, dbg=self._dbg)
         elif flash_driver == 'STM32F2':
-            self._driver = lib.stm32f2.Stm32F2(self._stlink, dbg=self._dbg)
+            self._driver = lib.stm32fs.Stm32FS(self._stlink, dbg=self._dbg)
         else:
             self._driver = lib.stm32.Stm32(self._stlink, dbg=self._dbg)
 
@@ -175,20 +175,20 @@ class PyStlink():
     def detect_cpu(self, cpu_type=None):
         self._connector = lib.stlinkusb.StlinkUsbConnector(dbg=self._dbg)
         self._stlink = lib.stlinkv2.Stlink(self._connector, dbg=self._dbg)
-        self._dbg.msg("STLINK: %s" % self._stlink.ver_str, level=1)
-        self._dbg.msg("SUPPLY: %.2fV" % self._stlink.target_voltage, level=1)
-        self._dbg.msg("COREID: %08x" % self._stlink.coreid, level=2)
+        self._dbg.info("STLINK: %s" % self._stlink.ver_str)
+        self._dbg.info("SUPPLY: %.2fV" % self._stlink.target_voltage)
+        self._dbg.verbose("COREID: %08x" % self._stlink.coreid)
         if self._stlink.coreid == 0:
             raise lib.stlinkex.StlinkException('Not connected to CPU')
         self.find_mcus_by_core()
-        self._dbg.msg("CORE:   %s" % self._mcus_by_core['core'])
+        self._dbg.info("CORE:   %s" % self._mcus_by_core['core'])
         self.find_mcus_by_devid()
         self.find_mcus_by_flash_size()
         if cpu_type:
             # filter found MCUs by selected MCU type
             self._mcus = self.find_mcus_by_mcu_type(cpu_type)
-        self._dbg.msg("MCU:    %s" % '/'.join([mcu['type'] for mcu in self._mcus]))
-        self._dbg.msg("FLASH:  %dKB" % self._flash_size)
+        self._dbg.info("MCU:    %s" % '/'.join([mcu['type'] for mcu in self._mcus]))
+        self._dbg.info("FLASH:  %dKB" % self._flash_size)
         self.find_sram_eeprom_size()
         self.load_driver()
 
@@ -217,12 +217,12 @@ class PyStlink():
         addr, data = mem
         with open(filename, 'wb') as f:
             f.write(bytes(data))
-            self._dbg.msg("Saved %d Bytes into %s file" % (len(data), filename))
+            self._dbg.info("Saved %d Bytes into %s file" % (len(data), filename))
 
     def read_file(self, filename, size=None):
         with open(filename, 'rb') as f:
             data = list(f.read())
-            self._dbg.msg("Loaded %d Bytes from %s file" % (len(data), filename))
+            self._dbg.info("Loaded %d Bytes from %s file" % (len(data), filename))
             return data
 
     def cmd_dump(self, params):
@@ -401,6 +401,7 @@ class PyStlink():
     def start(self):
         VERBOSE_CMDS = {'-q': 0, '-i': 1, '-v': 2, '-d': 3}
         argv = sys.argv[1:]
+        runtime_status = 0
         if argv:
             if argv[0] in ['--help', '-h']:
                 self.print_help()
@@ -411,10 +412,6 @@ class PyStlink():
             if argv[0] in VERBOSE_CMDS:
                 self._dbg.set_verbose(VERBOSE_CMDS[argv[0]])
                 argv = argv[1:]
-        else:
-            print("ST-Link/V2 for more info use:")
-            print("  %s --help" % sys.argv[0])
-            print("-----------------------------")
         try:
             if argv and (argv[0] in ['--cpu', '-c']):
                 argv = argv[1:]
@@ -428,24 +425,25 @@ class PyStlink():
                 if argv[0] in VERBOSE_CMDS:
                     self._dbg.set_verbose(VERBOSE_CMDS[argv[0]])
                 else:
-                    self._dbg.debug('CMD: %s' % argv[0], 2)
+                    self._dbg.verbose('CMD: %s' % argv[0])
                     try:
                         self.cmd(argv[0].split(':'))
                     except lib.stlinkex.StlinkExceptionBadParam as e:
                         raise e.set_cmd(argv[0])
                 argv = argv[1:]
         except lib.stlinkex.StlinkException as e:
-            self._dbg.debug(e, level=0)
+            self._dbg.error(e)
         except KeyboardInterrupt:
-            self._dbg.debug('Keyboard interrupt', level=0)
+            self._dbg.error('Keyboard interrupt')
         if self._driver and self.is_mcu_selected():
+            # disconnect from MCU
             try:
                 if self.is_mcu_selected() and not self._stay_in_debug:
                     self._driver.core_nodebug()
                 self._stlink.leave_state()
             except lib.stlinkex.StlinkException as e:
-                self._dbg.debug(e, level=0)
-        self._dbg.debug('DONE in %0.2fs' % (time.time() - self._start_time) , 1)
+                self._dbg.error(e)
+        self._dbg.verbose('DONE in %0.2fs' % (time.time() - self._start_time))
 
 
 if __name__ == "__main__":

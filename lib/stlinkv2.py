@@ -96,7 +96,7 @@ class Stlink():
         self._ver_api = 2 if self._ver_jtag > 11 else 1
         self._ver_str = "V%d.J%d.S%d (API:v%d)" % (self._ver_stlink, self._ver_jtag, self._ver_swim, self._ver_api)
         if self.ver_jtag < 23:
-            self._dbg.msg("*** ST-Link/V2 firmware is not recent, please upgrade first. Version is %s and functionality is not guaranteed. ***" % self._ver_str)
+            self._dbg.warning("ST-Link/V2 has not recent firmware version (%s), please upgrade first, functionality is not guaranteed." % self._ver_str)
 
     @property
     def ver_stlink(self):

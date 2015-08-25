@@ -156,15 +156,16 @@ class Flash():
         self._stlink.set_debugreg32(Flash.FLASH_SR_REG, status)
 
 
-# support STM32F0xx, STM32F1xx and also STM32F3xx
-class Stm32F0(lib.stm32.Stm32):
+# support all STM32F MCUs with page access to FLASH
+# (STM32F0xx, STM32F1xx and also STM32F3xx)
+class Stm32FP(lib.stm32.Stm32):
     def _flash_erase_all(self, bank=0):
         flash = Flash(self, self._stlink, self._dbg, bank=bank)
         flash.erase_all()
         flash.lock()
 
     def flash_erase_all(self):
-        self._dbg.debug('Stm32F0.flash_erase_all()')
+        self._dbg.debug('Stm32FP.flash_erase_all()')
         self._flash_erase_all()
 
     def _flash_write(self, addr, data, erase=False, verify=False, erase_sizes=None, bank=0):
@@ -178,7 +179,7 @@ class Stm32F0(lib.stm32.Stm32):
             else:
                 flash.erase_all()
         self._dbg.bargraph_start('Writing FLASH', value_min=addr, value_max=addr + len(data))
-        flash.init_write(Stm32F0.SRAM_START)
+        flash.init_write(Stm32FP.SRAM_START)
         while(data):
             self._dbg.bargraph_update(value=addr)
             block = data[:self._stlink.STLINK_MAXIMUM_TRANSFER_SIZE]
@@ -191,7 +192,7 @@ class Stm32F0(lib.stm32.Stm32):
         self._dbg.bargraph_done()
 
     def flash_write(self, addr, data, erase=False, verify=False, erase_sizes=None):
-        self._dbg.debug('Stm32F0.flash_write(%s, [data:%dBytes], erase=%s, verify=%s, erase_sizes=%s)' % (('0x%08x' % addr) if addr is not None else 'None', len(data), erase, verify, erase_sizes))
+        self._dbg.debug('Stm32FP.flash_write(%s, [data:%dBytes], erase=%s, verify=%s, erase_sizes=%s)' % (('0x%08x' % addr) if addr is not None else 'None', len(data), erase, verify, erase_sizes))
         if addr is None:
             addr = self.FLASH_START
         if addr % 2:
@@ -199,8 +200,9 @@ class Stm32F0(lib.stm32.Stm32):
         self._flash_write(addr, data, erase=erase, verify=verify, erase_sizes=erase_sizes)
 
 
-# support STM32F1xxxF and STM32F1xxxG (XL)
-class Stm32F1XL(Stm32F0):
+# support STM32F MCUs with page access to FLASH and two banks
+# (STM32F1xxxF and STM32F1xxxG) (XL devices)
+class Stm32FPXL(Stm32FP):
     BANK_SIZE = 512 * 1024
 
     def flash_erase_all(self):
@@ -214,14 +216,14 @@ class Stm32F1XL(Stm32F0):
             addr = self.FLASH_START
         if addr % 2:
             raise lib.stlinkex.StlinkException('Address is not alligned')
-        if (addr - self.FLASH_START) + len(data) <= Stm32F1XL.BANK_SIZE:
+        if (addr - self.FLASH_START) + len(data) <= Stm32FPXL.BANK_SIZE:
             self._flash_write(addr, data, erase=erase, verify=verify, erase_sizes=erase_sizes, bank=0)
-        elif (addr - self.FLASH_START) > Stm32F1XL.BANK_SIZE:
+        elif (addr - self.FLASH_START) > Stm32FPXL.BANK_SIZE:
             self._flash_write(addr, data, erase=erase, verify=verify, erase_sizes=erase_sizes, bank=1)
         else:
             addr_bank1 = addr
-            addr_bank2 = self.FLASH_START + Stm32F1XL.BANK_SIZE
-            data_bank1 = data[:(Stm32F1XL.BANK_SIZE - (addr - self.FLASH_START))]
-            data_bank2 = data[(Stm32F1XL.BANK_SIZE - (addr - self.FLASH_START)):]
+            addr_bank2 = self.FLASH_START + Stm32FPXL.BANK_SIZE
+            data_bank1 = data[:(Stm32FPXL.BANK_SIZE - (addr - self.FLASH_START))]
+            data_bank2 = data[(Stm32FPXL.BANK_SIZE - (addr - self.FLASH_START)):]
             self._flash_write(addr_bank1, data_bank1, erase=erase, verify=verify, erase_sizes=erase_sizes, bank=0)
             self._flash_write(addr_bank2, data_bank2, erase=erase, verify=verify, erase_sizes=erase_sizes, bank=1)

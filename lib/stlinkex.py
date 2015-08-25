@@ -3,7 +3,7 @@ class StlinkException(Exception):
         self._msg = msg
 
     def __str__(self):
-        return "*** %s ***" % self._msg
+        return self._msg
 
 
 class StlinkExceptionBadParam(StlinkException):
@@ -18,7 +18,7 @@ class StlinkExceptionBadParam(StlinkException):
         msg = 'Bad param: "%s"' % self._cmd
         if self._info:
             msg += ', ' + self._info
-        return "*** %s ***" % msg
+        return msg
 
 
 class StlinkExceptionCpuNotSelected(StlinkException):

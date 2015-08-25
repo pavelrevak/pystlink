@@ -12,13 +12,14 @@ Small python application for communicating with **ST-Link/V2** and almost all **
 - download memory to binary file
 - upload binary file into memory
 - basic runtime control: reset, halt, step, run
-- supported MCUs for flashing: **STM32F0**, **STM32F1**, **STM32F2**, **STM32F3**, **STM32F4** and **STM32F7**
+- support all **STM32Fxxx** MCUs for FLASHing
 
 ### Planed features
 
 - flashing support for other MCU types (STM32Lxx)
 - flashing information block (system memory, option bytes and OTP area)
 - connecting under RESET
+- support for more ST-Link devices connected at once
 - other file formats (SREC, HEX)
 - maybe in future connection to GDB
 - and maybe GUI
@@ -109,9 +110,9 @@ examples:
 
 Currently all **ST32F** and **ST32L** [MCU](http://www.st.com/web/en/catalog/mmc/FM141/SC1169).
 
-FLASHing support is on all **STM32F0** to **STM32F4**.
+FLASHing support is on all **STM32F0** to **STM32F7**.
 
-Not all MCUs are tested. Please report all problems.
+**Not all MCUs are tested**. Please report any problems to [Issues tracker](https://github.com/pavelrevak/pystlink/issues).
 
 In WiKi is some basic info about STM32 naming: [STM32 coding matrix](https://github.com/pavelrevak/pystlink/wiki/STM32-coding-matrix)
 
