@@ -160,11 +160,11 @@ class PyStlink():
 
     def load_driver(self):
         flash_driver = self._mcus_by_devid['flash_driver']
-        if flash_driver == 'STM32F0':
+        if flash_driver == 'STM32FP':
             self._driver = lib.stm32fp.Stm32FP(self._stlink, dbg=self._dbg)
-        elif flash_driver == 'STM32F1XL':
+        elif flash_driver == 'STM32FPXL':
             self._driver = lib.stm32fp.Stm32FPXL(self._stlink, dbg=self._dbg)
-        elif flash_driver == 'STM32F2':
+        elif flash_driver == 'STM32FS':
             self._driver = lib.stm32fs.Stm32FS(self._stlink, dbg=self._dbg)
         else:
             self._driver = lib.stm32.Stm32(self._stlink, dbg=self._dbg)
@@ -433,8 +433,10 @@ class PyStlink():
                 argv = argv[1:]
         except lib.stlinkex.StlinkException as e:
             self._dbg.error(e)
+            runtime_status = 1
         except KeyboardInterrupt:
             self._dbg.error('Keyboard interrupt')
+            runtime_status = 1
         if self._driver and self.is_mcu_selected():
             # disconnect from MCU
             try:
@@ -443,10 +445,13 @@ class PyStlink():
                 self._stlink.leave_state()
             except lib.stlinkex.StlinkException as e:
                 self._dbg.error(e)
+            runtime_status = 1
         self._dbg.verbose('DONE in %0.2fs' % (time.time() - self._start_time))
+        return runtime_status
 
 
 if __name__ == "__main__":
     dbg = lib.dbg.Dbg(verbose=1)
     pystlink = PyStlink(dbg=dbg)
-    pystlink.start()
+    runtime_status = pystlink.start()
+    exit(runtime_status)
