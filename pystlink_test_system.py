@@ -226,4 +226,12 @@ class TestStm32(Stlink):
 
 
 if __name__ == '__main__':
+    import sys
+    if len(sys.argv) < 2:
+        print('Select right test case class depending on connected HW (as command line parameter):')
+        import inspect
+        for name, obj in inspect.getmembers(sys.modules[__name__]):
+            if inspect.isclass(obj) and name.startswith('Test'):
+                print('  ' + name)
+        exit(0)
     unittest.main()
