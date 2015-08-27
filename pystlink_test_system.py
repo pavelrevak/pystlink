@@ -6,7 +6,7 @@ class Stlink(unittest.TestCase):
     def _pystlink(self, arg=None, excepted_err=''):
         args = ['python', 'pystlink.py']
         if arg:
-            args += arg.split(' ')
+            args += arg
         p = subprocess.Popen(
             args,
             stdout=subprocess.PIPE,
@@ -90,139 +90,169 @@ class TestStm32(Stlink):
         self.assertEqual(ret['output'], [])
 
     def testCoreReset(self):
-        ret = self._pystlink('core:reset')
+        ret = self._pystlink(['core:reset'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
         self.assertEqual(ret['output'], [])
 
     def testCoreResetHalt(self):
-        ret = self._pystlink('core:reset:halt')
+        ret = self._pystlink(['core:reset:halt'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
         self.assertEqual(ret['output'], [])
 
     def testCoreHalt(self):
-        ret = self._pystlink('core:halt')
+        ret = self._pystlink(['core:halt'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
         self.assertEqual(ret['output'], [])
 
     def testCoreRun(self):
-        ret = self._pystlink('core:run')
+        ret = self._pystlink(['core:run'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
         self.assertEqual(ret['output'], [])
 
     def testCoreStep(self):
-        ret = self._pystlink('core:step')
+        ret = self._pystlink(['core:step'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
         self.assertEqual(ret['output'], [])
 
     def testNorun(self):
-        ret = self._pystlink('norun')
+        ret = self._pystlink(['norun'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
         self.assertEqual(ret['output'], [])
 
     def testDumpRegAll(self):
-        ret = self._pystlink('dump:reg:all')
+        ret = self._pystlink(['dump:reg:all'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
         for reg in self.REGISTERS:
             assert reg in ret['values']
 
     def testDumpRegR0(self):
-        ret = self._pystlink('dump:reg:R0')
+        ret = self._pystlink(['dump:reg:R0'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
         assert 'R0' in ret['values']
 
     def testDumpRegPC(self):
-        ret = self._pystlink('dump:reg:PC')
+        ret = self._pystlink(['dump:reg:PC'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
         assert 'PC' in ret['values']
 
-    def testDumpRegAddr(self):
-        ret = self._pystlink('dump:reg:0x08000000')
-        self.assertEqual(ret['errors'], [])
-        self.assertEqual(ret['warnings'], [])
-        assert '08000000' in ret['values']
-
     def testDumpReg(self):
-        ret = self._pystlink('dump:reg:0x08000000')
+        ret = self._pystlink(['dump:reg:0x08000000'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
         assert '08000000' in ret['values']
         assert len(ret['values']['08000000']) == 8
 
     def testDumpReg16(self):
-        ret = self._pystlink('dump:reg16:0x08000000')
+        ret = self._pystlink(['dump:reg16:0x08000000'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
         assert '08000000' in ret['values']
         assert len(ret['values']['08000000']) == 4
 
     def testDumpReg8(self):
-        ret = self._pystlink('dump:reg8:0x08000000')
+        ret = self._pystlink(['dump:reg8:0x08000000'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
         assert '08000000' in ret['values']
         assert len(ret['values']['08000000']) == 2
 
     def testDumpMem1(self):
-        ret = self._pystlink('dump:mem:0x08000000:1')
+        ret = self._pystlink(['dump:mem:0x08000000:1'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
         self.assertEqual(len(ret['output']), 2)
         self.assertEqual(ret['output'][-1], '08000001')
 
     def testDumpMem16(self):
-        ret = self._pystlink('dump:mem:0x08000000:16')
+        ret = self._pystlink(['dump:mem:0x08000000:16'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
         self.assertEqual(len(ret['output']), 2)
         self.assertEqual(ret['output'][-1], '08000010')
 
     def testDumpMem18(self):
-        ret = self._pystlink('dump:mem:0x08000000:18')
+        ret = self._pystlink(['dump:mem:0x08000000:18'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
         assert len(ret['output']) <= 3
         self.assertEqual(ret['output'][-1], '08000012')
 
     def testDumpMem1024(self):
-        ret = self._pystlink('dump:mem:0x08000000:1024')
+        ret = self._pystlink(['dump:mem:0x08000000:1024'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
-        assert len(ret['output']) <= 64
+        assert len(ret['output']) <= 65
         self.assertEqual(ret['output'][-1], '08000400')
 
     def testDumpMem4008(self):
-        ret = self._pystlink('dump:mem:0x08000000:4008')
+        ret = self._pystlink(['dump:mem:0x08000000:4008'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
-        assert len(ret['output']) <= 251
+        assert len(ret['output']) <= 252
         self.assertEqual(ret['output'][-1], '08000fa8')
 
     def testDumpSram(self):
-        ret = self._pystlink('dump:sram')
+        ret = self._pystlink(['dump:sram'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
         sram_size = int(ret['params']['SRAM'].strip('KB')) * 1024
-        assert len(ret['output']) <= sram_size // 16
+        assert len(ret['output']) <= sram_size // 16 + 1
         self.assertEqual(int(ret['output'][0].split()[0], 16), self.SRAM_START)
         self.assertEqual(int(ret['output'][-1], 16), self.SRAM_START + sram_size)
 
     def testDumpFlash(self):
-        ret = self._pystlink('dump:flash')
+        ret = self._pystlink(['dump:flash'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
         flash_size = int(ret['params']['FLASH'].strip('KB')) * 1024
-        assert len(ret['output']) <= flash_size // 16
+        assert len(ret['output']) <= flash_size // 16 + 1
         self.assertEqual(int(ret['output'][0].split()[0], 16), self.FLASH_START)
         self.assertEqual(int(ret['output'][-1], 16), self.FLASH_START + flash_size)
+
+    def testWriteRegR0(self):
+        ret = self._pystlink([
+            'core:reset:halt',
+            'write:reg:R0:0x12345678',
+            'dump:reg:R0',
+        ])
+        self.assertEqual(ret['errors'], [])
+        self.assertEqual(ret['warnings'], [])
+        self.assertEqual(int(ret['values']['R0'], 16), 0x12345678)
+
+    def testWriteReg(self):
+        ret = self._pystlink([
+            'core:reset:halt',
+            'write:reg:0x20000000:0x12345678',
+            'dump:reg:0x20000000',
+        ])
+        self.assertEqual(ret['errors'], [])
+        self.assertEqual(ret['warnings'], [])
+        self.assertEqual(int(ret['values']['20000000'], 16), 0x12345678)
+
+    def testCoreStepCode(self):
+        ret = self._pystlink([
+            'core:reset:halt',
+            'write:reg:0x20000000:0x46c046c0',  # 2 x THMUB NOP (MOV R8, R8) instructions into begin of RAM
+            'write:reg:pc:0x20000000',  # set PC to begin of RAM
+            'dump:reg:pc',
+            'core:step',
+            'dump:reg:pc',
+            'core:step',
+            'dump:reg:pc',
+            'core:reset',
+        ])
+        self.assertEqual(ret['errors'], [])
+        self.assertEqual(ret['warnings'], [])
+        self.assertEqual(ret['output'], ['PC: 20000000', 'PC: 20000002', 'PC: 20000004', ])
 
 
 if __name__ == '__main__':
