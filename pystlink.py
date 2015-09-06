@@ -445,7 +445,7 @@ class PyStlink():
                 self._stlink.leave_state()
             except lib.stlinkex.StlinkException as e:
                 self._dbg.error(e)
-            runtime_status = 1
+                runtime_status = 1
         self._dbg.verbose('DONE in %0.2fs' % (time.time() - self._start_time))
         return runtime_status
 
