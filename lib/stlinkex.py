@@ -17,7 +17,7 @@ class StlinkExceptionBadParam(StlinkException):
     def __str__(self):
         msg = 'Bad param: "%s"' % self._cmd
         if self._info:
-            msg += ', ' + self._info
+            msg += ': %s' % self._info
         return msg
 
 

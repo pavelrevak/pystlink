@@ -49,68 +49,69 @@ Instead of all unimplemented features there are these known bugs:
 ## Help
 ```
 usage:
-  pystlink.py [options|verbose] [commands|verbose ...]
+  pystlink.py [options] [commands ...]
 
 options:
-  --help -h          show this help
-  --version -V       show version
-  --cpu -c {cputype} set expected cputype, eg: STM32F051R8 or STM32L4
+  -h --help          show this help
+  -V --version       show version
+  -n --norun         don't run core when disconnecting from ST-Link (when program end)
+  -c --cpu {cputype} set expected cputype, eg: STM32F051R8 or STM32L4
 
 verbose:
-  all verbose modes can also use between any commands (to configure verbosity of any commands)
-  -q                 set quiet
-  -i                 set info (default)
-  -v                 set verbose
-  -d                 set debug
+  all verbose modes can also use between any commands (to set verbosity of any commands)
+  -q --quiet         set quiet
+  -i --info          set info (default)
+  -v --verbose       set verbose
+  -d --debug         set debug
 
 commands:
-  dump:reg:all - print all registers (halt core)
-  dump:reg:{reg_name} - print register (halt core)
-  dump:reg:{addr} - print content of 32 bit memory register
-  dump:reg16:{addr} - print content of 16 bit memory register
-  dump:reg8:{addr} - print content of 8 bit memory register
-  dump:mem:{addr}:{size} - print content of memory
-  dump:flash[:{size}] - print content of FLASH memory
-  dump:sram[:{size}] - print content of SRAM memory
+  (address and size can be in different numeric formats, like: 123, 0x1ac, 0o137, 0b1011)
+  dump:core              print all core registers (halt core)
+  dump:{reg}             print core register (halt core)
+  dump:{addr}:{size}     print content of memory
+  dump:sram[:{size}]     print content of SRAM memory
+  dump:flash[:{size}]    print content of FLASH memory
+  dump:{addr}            print content of 32 bit memory register
+  dump16:{addr}          print content of 16 bit memory register
+  dump8:{addr}           print content of 8 bit memory register
 
-  download:mem:{addr}:{size}:{file} - download memory into file
-  download:sram:{file} - download SRAM into file
-  download:flash:{file} - download FLASH into file
+  write:{reg}:{data}     write register (halt core)
+  write:{addr}:{data}    write 32 bit memory register
 
-  write:reg:{reg_name}:{data} - write register (halt core)
-  write:reg:{addr}:{data} - write 32 bit memory register
+  download:{addr}:{size}:{file}      download memory with size into file
+  download:sram[:{size}]:{file}      download SRAM into file
+  download:flash[:{size}]:{file}     download FLASH into file
 
-  upload:mem:{addr}:{file} - upload file into memory (not for writing FLASH, only SRAM or registers)
+  upload:{addr}:{file}   upload file into memory (not for writing FLASH, only SRAM or registers)
+  upload:sram:{file}     upload file into SRAM memory (not for writing FLASH, only SRAM or registers)
 
-  flash:erase - complete erase FLASH memory aka mass erase - (in some cases it can be faster than flash:erase:write:...)
-  flash:write[:verify][:{addr}]:{file} - write file into FLASH memory + optional verify
-  flash:erase:write[:verify][:{addr}]:{file} - erase only pages or sectors where will be written program + write... (faster)
+  flash:erase            complete erase FLASH memory aka mass erase - (in some cases it can be faster than flash:erase:write:...)
+  flash:write[:verify][:{addr}]:{file}           write file into FLASH memory + optional verify
+  flash:erase:write[:verify][:{addr}]:{file}     erase only pages or sectors under written program + write... (faster)
 
-  core:reset - reset core
-  core:reset:halt - reset and halt core
-  core:halt - halt core
-  core:step - step core
-  core:run - run core
-
-  norun - don't run core when disconnecting from ST-Link (when program end)
+  reset - reset core
+  reset:halt - reset and halt core
+  halt - halt core
+  step - step core
+  run - run core
 
 examples:
   pystlink.py --help
-  pystlink.py -V --cpu STM32F051R8
+  pystlink.py -v --cpu STM32F051R8
   pystlink.py -q --cpu STM32F03 dump:flash dump:sram
-  pystlink.py dump:mem:0x08000000:256
-  pystlink.py write:reg:0x48000018:0x00000100 dump:reg:0x48000014
-  pystlink.py download:sram:aaa.bin download:flash:bbb.bin
-  pystlink.py norun core:reset:halt dump:reg:pc core:step dump:reg:all
+  pystlink.py dump:0x08000000:256
+  pystlink.py write:0x48000018:0x00000100 dump:0x48000014
+  pystlink.py download:sram:256:aaa.bin download:flash:bbb.bin
+  pystlink.py -n reset:halt write:pc:0x20000010 dump:pc core:step dump:all
   pystlink.py flash:erase:write:verify:app.bin
-  pystlink.py flash:erase flash:write:verify:0x0800f000:boot.bin
+  pystlink.py flash:erase flash:verify:0x08010000:boot.bin
 ```
 
 ## Supported MCUs:
 
 Currently all **ST32F** and **ST32L** [MCU](http://www.st.com/web/en/catalog/mmc/FM141/SC1169).
 
-FLASHing support is on all **STM32F0** to **STM32F7**.
+FLASHing support is for all **STM32F**.
 
 **Not all MCUs are tested**. Please report any problems to [Issues tracker](https://github.com/pavelrevak/pystlink/issues).
 

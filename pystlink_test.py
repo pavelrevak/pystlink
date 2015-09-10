@@ -14,6 +14,9 @@ class MockDbg():
     def msg(self, msg, level=1):
         pass
         # print(msg)
+    def verbose(self, msg, level=1):
+        pass
+        # print(msg)
     def bargraph_start(self, msg, value_min=0, value_max=100, level=1):
         pass
     def bargraph_update(self, value=0, percent=None):
