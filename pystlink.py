@@ -13,9 +13,9 @@ import lib.dbg
 class PyStlink():
     CPUID_REG = 0xe000ed00
 
-    def __init__(self, dbg):
+    def __init__(self):
         self._start_time = time.time()
-        self._dbg = dbg
+        self._dbg = lib.dbg.Dbg(verbose=1)
         self._connector = None
         self._stlink = None
         self._driver = None
@@ -76,15 +76,16 @@ class PyStlink():
         print("  norun - don't run core when disconnecting from ST-Link (when program end)")
         print()
         print("examples:")
-        print("  %s --help" % sys.argv[0])
-        print("  %s -v --cpu STM32F051R8" % sys.argv[0])
-        print("  %s -q --cpu STM32F03 dump:flash dump:sram" % sys.argv[0])
-        print("  %s dump:mem:0x08000000:256" % sys.argv[0])
-        print("  %s write:reg:0x48000018:0x00000100 dump:reg:0x48000014" % sys.argv[0])
-        print("  %s download:sram:aaa.bin download:flash:bbb.bin" % sys.argv[0])
-        print("  %s norun core:reset:halt dump:reg:pc core:step dump:reg:all" % sys.argv[0])
-        print("  %s flash:erase:write:verify:app.bin" % sys.argv[0])
-        print("  %s flash:erase flash:verify:0x08010000:boot.bin" % sys.argv[0])
+        program_name = sys.argv[0]
+        print("  %s --help" % program_name)
+        print("  %s -v --cpu STM32F051R8" % program_name)
+        print("  %s -q --cpu STM32F03 dump:flash dump:sram" % program_name)
+        print("  %s dump:mem:0x08000000:256" % program_name)
+        print("  %s write:reg:0x48000018:0x00000100 dump:reg:0x48000014" % program_name)
+        print("  %s download:sram:aaa.bin download:flash:bbb.bin" % program_name)
+        print("  %s norun core:reset:halt dump:reg:pc core:step dump:reg:all" % program_name)
+        print("  %s flash:erase:write:verify:app.bin" % program_name)
+        print("  %s flash:erase flash:verify:0x08010000:boot.bin" % program_name)
         print()
 
     def find_mcus_by_core(self):
@@ -447,11 +448,10 @@ class PyStlink():
                 self._dbg.error(e)
                 runtime_status = 1
         self._dbg.verbose('DONE in %0.2fs' % (time.time() - self._start_time))
-        return runtime_status
+        if runtime_status:
+            sys.exit(runtime_status)
 
 
 if __name__ == "__main__":
-    dbg = lib.dbg.Dbg(verbose=1)
-    pystlink = PyStlink(dbg=dbg)
-    runtime_status = pystlink.start()
-    exit(runtime_status)
+    pystlink = PyStlink()
+    pystlink.start()
