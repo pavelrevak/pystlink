@@ -494,5 +494,130 @@ class TestStm32_set_mem(unittest.TestCase):
         self._test_set_mem(2, 1100)
 
 
+class TestStm32_fill_mem(unittest.TestCase):
+    def setUp(self):
+        class MockStlink():
+            STLINK_MAXIMUM_TRANSFER_SIZE = 1024
+            def __init__(self, test):
+                self._test = test
+                self._pointer = None
+                self._index = 0
+            def set_mem32(self, addr, data):
+                self._test.assertNotEqual(len(data), 0)
+                self._test.assertEqual(addr % 4, 0)
+                self._test.assertEqual(len(data) % 4, 0)
+                if self._pointer is None:
+                    self._pointer = addr
+                assert len(data) <= 1024
+                self._test.assertEqual(addr, self._pointer)
+                self._pointer += len(data)
+                self._index += len(data)
+            def set_mem8(self, addr, data):
+                self._test.assertNotEqual(len(data), 0)
+                if self._pointer is None:
+                    self._pointer = addr
+                assert len(data) <= 64
+                self._test.assertEqual(addr, self._pointer)
+                self._pointer += len(data)
+                self._index += len(data)
+        self._driver = lib.stm32.Stm32(stlink=MockStlink(self), dbg=MockDbg())
+
+    def _test_fill_mem(self, addr, size):
+        self._driver.fill_mem(addr, size, 0x55)
+
+    def test_addr_0_size_0(self):
+        self._test_fill_mem(0, 0)
+
+    def test_addr_0_size_1(self):
+        self._test_fill_mem(0, 1)
+
+    def test_addr_0_size_2(self):
+        self._test_fill_mem(0, 2)
+
+    def test_addr_0_size_3(self):
+        self._test_fill_mem(0, 3)
+
+    def test_addr_0_size_4(self):
+        self._test_fill_mem(0, 4)
+
+    def test_addr_1_size_0(self):
+        self._test_fill_mem(1, 0)
+
+    def test_addr_1_size_1(self):
+        self._test_fill_mem(1, 1)
+
+    def test_addr_1_size_3(self):
+        self._test_fill_mem(1, 3)
+
+    def test_addr_1_size_4(self):
+        self._test_fill_mem(1, 4)
+
+    def test_addr_2_size_1(self):
+        self._test_fill_mem(2, 1)
+
+    def test_addr_2_size_2(self):
+        self._test_fill_mem(2, 2)
+
+    def test_addr_2_size_4(self):
+        self._test_fill_mem(2, 4)
+
+    def test_addr_3_size_1(self):
+        self._test_fill_mem(3, 1)
+
+    def test_addr_3_size_2(self):
+        self._test_fill_mem(3, 2)
+
+    def test_addr_3_size_4(self):
+        self._test_fill_mem(3, 4)
+
+    def test_addr_4_size_1(self):
+        self._test_fill_mem(4, 1)
+
+    def test_addr_4_size_4(self):
+        self._test_fill_mem(4, 4)
+
+    def test_addr_4_size_12(self):
+        self._test_fill_mem(4, 12)
+
+    def test_addr_4_size_13(self):
+        self._test_fill_mem(4, 13)
+
+    def test_addr_5_size_11(self):
+        self._test_fill_mem(5, 11)
+
+    def test_addr_5_size_12(self):
+        self._test_fill_mem(5, 12)
+
+    def test_addr_0_size_1024(self):
+        self._test_fill_mem(0, 1024)
+
+    def test_addr_0_size_1025(self):
+        self._test_fill_mem(0, 1025)
+
+    def test_addr_0_size_1028(self):
+        self._test_fill_mem(0, 1028)
+
+    def test_addr_0_size_2048(self):
+        self._test_fill_mem(0, 2048)
+
+    def test_addr_0_size_8192(self):
+        self._test_fill_mem(0, 8192)
+
+    def test_addr_1_size_8192(self):
+        self._test_fill_mem(1, 8192)
+
+    def test_addr_4095_size_8192(self):
+        self._test_fill_mem(4095, 8192)
+
+    def test_addr_4096_size_8192(self):
+        self._test_fill_mem(4096, 8192)
+
+    def test_addr_1_size_1100(self):
+        self._test_fill_mem(1, 1100)
+
+    def test_addr_4_size_1100(self):
+        self._test_fill_mem(2, 1100)
+
+
 if __name__ == '__main__':
     unittest.main()

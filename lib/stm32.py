@@ -80,7 +80,7 @@ class Stm32():
     def set_mem(self, addr, data):
         self._dbg.debug('Stm32.set_mem(0x%08x, [data:%dBytes])' % (addr, len(data)))
         if len(data) == 0:
-            return addr, []
+            return
         if len(data) >= 16384:
             self._dbg.bargraph_start('Writing memory', value_max=len(data))
         size = 0
@@ -98,7 +98,32 @@ class Stm32():
         if size < len(data):
             self._stlink.set_mem8(addr + size, data[size:])
         self._dbg.bargraph_done()
-        return (addr, data)
+        return
+
+    def fill_mem(self, addr, size, pattern):
+        if pattern >= 256:
+            raise lib.stlinkex.StlinkException('Fill pattern can by 8 bit number')
+        self._dbg.debug('Stm32.fill_mem(0x%08x, 0x%02d)' % (addr, pattern))
+        if size == 0:
+            return
+        if size >= 16384:
+            self._dbg.bargraph_start('Writing memory', value_max=size)
+        written_size = 0
+        if addr % 4:
+            write_size = min(4 - (addr % 4), size)
+            self._stlink.set_mem8(addr, [pattern] * write_size)
+            written_size = write_size
+        while True:
+            self._dbg.bargraph_update(value=written_size)
+            write_size = min((size - written_size) & 0xfffffffc, self._stlink.STLINK_MAXIMUM_TRANSFER_SIZE)
+            if write_size == 0:
+                break
+            self._stlink.set_mem32(addr + written_size, [pattern] * write_size)
+            written_size += write_size
+        if written_size < size:
+            self._stlink.set_mem8(addr + written_size, [pattern] * (size - written_size))
+        self._dbg.bargraph_done()
+        return
 
     def core_reset(self):
         self._dbg.debug('Stm32.core_reset()')

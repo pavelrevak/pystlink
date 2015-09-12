@@ -82,12 +82,15 @@ commands:
   download:sram[:{size}]:{file}      download SRAM into file
   download:flash[:{size}]:{file}     download FLASH into file
 
-  upload:{addr}:{file}   upload file into memory (not for writing FLASH, only SRAM or registers)
-  upload:sram:{file}     upload file into SRAM memory (not for writing FLASH, only SRAM or registers)
+  upload:{addr}:{file}   upload file into memory
+  upload:sram:{file}     upload file into SRAM memory
 
-  flash:erase            complete erase FLASH memory aka mass erase - (in some cases it can be faster than flash:erase:write:...)
-  flash:write[:verify][:{addr}]:{file}           write file into FLASH memory + optional verify
-  flash:erase:write[:verify][:{addr}]:{file}     erase only pages or sectors under written program + write... (faster)
+  fill:{addr}:{size}:{pattern}    fill memory with a pattern
+  fill:sram[:{size}]:{pattern}    fill SRAM memory with a pattern
+
+  flash:erase            complete erase FLASH memory aka mass erase
+  flash:write[:verify][:{addr}]:{file}           flash file + optional verify
+  flash:erase:write[:verify][:{addr}]:{file}     erase pages or sectors + flash
 
   reset - reset core
   reset:halt - reset and halt core

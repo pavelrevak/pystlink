@@ -71,12 +71,15 @@ class PyStlink():
         print("  download:sram[:{size}]:{file}      download SRAM into file")
         print("  download:flash[:{size}]:{file}     download FLASH into file")
         print()
-        print("  upload:{addr}:{file}   upload file into memory (not for writing FLASH, only SRAM or registers)")
-        print("  upload:sram:{file}     upload file into SRAM memory (not for writing FLASH, only SRAM or registers)")
+        print("  upload:{addr}:{file}   upload file into memory")
+        print("  upload:sram:{file}     upload file into SRAM memory")
         print()
-        print("  flash:erase            complete erase FLASH memory aka mass erase - (in some cases it can be faster than flash:erase:write:...)")
-        print("  flash:write[:verify][:{addr}]:{file}           write file into FLASH memory + optional verify")
-        print("  flash:erase:write[:verify][:{addr}]:{file}     erase only pages or sectors under written program + write... (faster)")
+        print("  fill:{addr}:{size}:{pattern}    fill memory with a pattern")
+        print("  fill:sram[:{size}]:{pattern}    fill SRAM memory with a pattern")
+        print()
+        print("  flash:erase            complete erase FLASH memory aka mass erase")
+        print("  flash:write[:verify][:{addr}]:{file}           flash file + optional verify")
+        print("  flash:erase:write[:verify][:{addr}]:{file}     erase pages or sectors + flash")
         print()
         print("  reset - reset core")
         print("  reset:halt - reset and halt core")
@@ -299,15 +302,26 @@ class PyStlink():
 
     def cmd_upload(self, params):
         cmd = params[0]
-        file_name = params[-1]
-        params = params[1:-1]
-        if params:
+        params = params[1:]
+        if not params:
             raise lib.stlinkex.StlinkExceptionBadParam()
-        data = self.read_file(file_name)
+        data = self.read_file(params[0])
         if cmd == 'sram':
             self._driver.set_mem(self._driver.SRAM_START, data)
         else:
             self._driver.set_mem(int(cmd, 0), data)
+
+    def cmd_fill(self, params):
+        cmd = params[0]
+        value = int(params[-1], 0)
+        params = params[1:-1]
+        if cmd == 'sram':
+            size = int(params[0], 0) if params else self._sram_size * 1024
+            self._driver.fill_mem(self._driver.SRAM_START, size, value)
+        elif params:
+            self._driver.fill_mem(int(cmd, 0), int(params[0], 0), value)
+        else:
+            raise lib.stlinkex.StlinkExceptionBadParam()
 
     def cmd_flash_write(self, params, erase=False):
         verify = False
@@ -364,6 +378,8 @@ class PyStlink():
             self.cmd_write(params)
         elif cmd == 'upload' and params:
             self.cmd_upload(params)
+        elif cmd == 'fill' and params:
+            self.cmd_fill(params)
         elif cmd == 'flash' and params:
             self.cmd_flash(params)
         elif cmd == 'reset':
