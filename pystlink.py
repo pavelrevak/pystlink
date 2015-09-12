@@ -81,11 +81,13 @@ class PyStlink():
         print("  flash:write[:verify][:{addr}]:{file}           flash file + optional verify")
         print("  flash:erase:write[:verify][:{addr}]:{file}     erase pages or sectors + flash")
         print()
-        print("  reset - reset core")
-        print("  reset:halt - reset and halt core")
-        print("  halt - halt core")
-        print("  step - step core")
-        print("  run - run core")
+        print("  reset                  reset core")
+        print("  reset:halt             reset and halt core")
+        print("  halt                   halt core")
+        print("  step                   step core")
+        print("  run                    run core")
+        print()
+        print("  sleep:{seconds}        sleep (float) - insert delay between commands")
         print()
         print("examples:")
         program_name = sys.argv[0]
@@ -246,13 +248,16 @@ class PyStlink():
         cmd = params[0]
         params = params[1:]
         if cmd == 'core':
+            # dump all core registers
             self._driver.core_halt()
             for reg, val in self._driver.get_reg_all():
                 print("  %3s: %08x" % (reg, val))
         elif self._driver.is_reg(cmd):
+            # dump core register
             self._driver.core_halt()
             reg = cmd.upper()
-            print("  %3s: %08x" % (reg, self._driver.get_reg(reg)))
+            val = self._driver.get_reg(reg)
+            print("  %3s: %08x" % (reg, val))
         elif cmd == 'flash':
             size = int(params[0], 0) if params else self._flash_size * 1024
             self.dump_mem(self._driver.FLASH_START, size)
@@ -260,13 +265,15 @@ class PyStlink():
             size = int(params[0], 0) if params else self._sram_size * 1024
             self.dump_mem(self._driver.SRAM_START, size)
         elif params:
+            # dump memory from address with size
             addr = int(cmd, 0)
             size = int(params[0], 0)
             self.dump_mem(addr, size)
         else:
+            # dump 32 bit register at address
             addr = int(cmd, 0)
-            reg = self._stlink.get_debugreg32(addr)
-            print('  %08x: %08x' % (addr, reg))
+            val = self._stlink.get_debugreg32(addr)
+            print('  %08x: %08x' % (addr, val))
 
     def cmd_download(self, params):
         cmd = params[0]
@@ -396,6 +403,8 @@ class PyStlink():
             self._driver.core_step()
         elif cmd == 'run':
             self._driver.core_run()
+        elif cmd == 'sleep' and len(params) == 1:
+            time.sleep(float(params[0]))
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 

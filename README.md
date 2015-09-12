@@ -92,11 +92,13 @@ commands:
   flash:write[:verify][:{addr}]:{file}           flash file + optional verify
   flash:erase:write[:verify][:{addr}]:{file}     erase pages or sectors + flash
 
-  reset - reset core
-  reset:halt - reset and halt core
-  halt - halt core
-  step - step core
-  run - run core
+  reset                  reset core
+  reset:halt             reset and halt core
+  halt                   halt core
+  step                   step core
+  run                    run core
+
+  sleep:{seconds}        sleep (float) - insert delay between commands
 
 examples:
   pystlink.py --help
