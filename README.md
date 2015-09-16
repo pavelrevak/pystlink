@@ -82,15 +82,16 @@ commands:
   download:sram[:{size}]:{file}      download SRAM into file
   download:flash[:{size}]:{file}     download FLASH into file
 
-  upload:{addr}:{file}   upload file into memory
-  upload:sram:{file}     upload file into SRAM memory
+  fill:{addr}:{size}:{pattern}   fill memory with a pattern
+  fill:sram[:{size}]:{pattern}   fill SRAM memory with a pattern
 
-  fill:{addr}:{size}:{pattern}    fill memory with a pattern
-  fill:sram[:{size}]:{pattern}    fill SRAM memory with a pattern
+  upload:{file.srec}     upload SREC file into memory
+  upload:{addr}:{file}   upload binary file into memory
+  upload:sram:{file}     upload binary file into SRAM memory
 
   flash:erase            complete erase FLASH memory aka mass erase
-  flash:write[:verify][:{addr}]:{file}           flash file + optional verify
-  flash:erase:write[:verify][:{addr}]:{file}     erase pages or sectors + flash
+  flash[:erase][:verify]:{file.srec}     erase + flash SREC file + verify
+  flash[:erase][:verify][:{addr}]:{file} erase + flash binary file + verify
 
   reset                  reset core
   reset:halt             reset and halt core
@@ -108,7 +109,7 @@ examples:
   pystlink.py write:0x48000018:0x00000100 dump:0x48000014
   pystlink.py download:sram:256:aaa.bin download:flash:bbb.bin
   pystlink.py -n reset:halt write:pc:0x20000010 dump:pc core:step dump:all
-  pystlink.py flash:erase:write:verify:app.bin
+  pystlink.py flash:erase:verify:app.bin
   pystlink.py flash:erase flash:verify:0x08010000:boot.bin
 ```
 

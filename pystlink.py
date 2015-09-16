@@ -8,6 +8,7 @@ import lib.stm32fs
 import lib.stm32devices
 import lib.stlinkex
 import lib.dbg
+import lib.srec
 
 
 class PyStlink():
@@ -71,15 +72,16 @@ class PyStlink():
         print("  download:sram[:{size}]:{file}      download SRAM into file")
         print("  download:flash[:{size}]:{file}     download FLASH into file")
         print()
-        print("  upload:{addr}:{file}   upload file into memory")
-        print("  upload:sram:{file}     upload file into SRAM memory")
+        print("  fill:{addr}:{size}:{pattern}   fill memory with a pattern")
+        print("  fill:sram[:{size}]:{pattern}   fill SRAM memory with a pattern")
         print()
-        print("  fill:{addr}:{size}:{pattern}    fill memory with a pattern")
-        print("  fill:sram[:{size}]:{pattern}    fill SRAM memory with a pattern")
+        print("  upload:{file.srec}     upload SREC file into memory")
+        print("  upload:{addr}:{file}   upload binary file into memory")
+        print("  upload:sram:{file}     upload binary file into SRAM memory")
         print()
         print("  flash:erase            complete erase FLASH memory aka mass erase")
-        print("  flash:write[:verify][:{addr}]:{file}           flash file + optional verify")
-        print("  flash:erase:write[:verify][:{addr}]:{file}     erase pages or sectors + flash")
+        print("  flash[:erase][:verify]:{file.srec}     erase + flash SREC file + verify")
+        print("  flash[:erase][:verify][:{addr}]:{file} erase + flash binary file + verify")
         print()
         print("  reset                  reset core")
         print("  reset:halt             reset and halt core")
@@ -98,7 +100,7 @@ class PyStlink():
         print("  %s write:0x48000018:0x00000100 dump:0x48000014" % program_name)
         print("  %s download:sram:256:aaa.bin download:flash:bbb.bin" % program_name)
         print("  %s -n reset:halt write:pc:0x20000010 dump:pc core:step dump:all" % program_name)
-        print("  %s flash:erase:write:verify:app.bin" % program_name)
+        print("  %s flash:erase:verify:app.bin" % program_name)
         print("  %s flash:erase flash:verify:0x08010000:boot.bin" % program_name)
         print()
 
@@ -207,8 +209,7 @@ class PyStlink():
         self.find_sram_eeprom_size()
         self.load_driver()
 
-    def print_buffer(self, mem, bytes_per_line=16):
-        addr, data = mem
+    def print_buffer(self, addr, data, bytes_per_line=16):
         prev_chunk = []
         same_chunk = False
         for i in range(0, len(data), bytes_per_line):
@@ -228,21 +229,25 @@ class PyStlink():
             addr += len(chunk)
         print('%08x' % addr)
 
-    def store_file(self, mem, filename):
-        addr, data = mem
+    def store_file(self, addr, data, filename):
         with open(filename, 'wb') as f:
             f.write(bytes(data))
             self._dbg.info("Saved %d Bytes into %s file" % (len(data), filename))
 
-    def read_file(self, filename, size=None):
+    def read_file(self, filename):
+        if filename.endswith('.srec'):
+            srec = lib.srec.Srec()
+            srec.encode_file(filename)
+            return srec.buffers
         with open(filename, 'rb') as f:
             data = list(f.read())
             self._dbg.info("Loaded %d Bytes from %s file" % (len(data), filename))
-            return data
+            return [(None, data)]
+        raise lib.stlinkex.StlinkException("Error reading file")
 
     def dump_mem(self, addr, size):
-        mem = self._driver.get_mem(addr, size)
-        self.print_buffer(mem)
+        data = self._driver.get_mem(addr, size)
+        self.print_buffer(addr, data)
 
     def cmd_dump(self, params):
         cmd = params[0]
@@ -260,15 +265,17 @@ class PyStlink():
             print("  %3s: %08x" % (reg, val))
         elif cmd == 'flash':
             size = int(params[0], 0) if params else self._flash_size * 1024
-            self.dump_mem(self._driver.FLASH_START, size)
+            data = self._driver.get_mem(self._driver.FLASH_START, size)
+            self.print_buffer(self._driver.FLASH_START, data)
         elif cmd == 'sram':
             size = int(params[0], 0) if params else self._sram_size * 1024
-            self.dump_mem(self._driver.SRAM_START, size)
+            data = self._driver.get_mem(self._driver.SRAM_START, size)
+            self.print_buffer(self._driver.SRAM_START, data)
         elif params:
             # dump memory from address with size
             addr = int(cmd, 0)
-            size = int(params[0], 0)
-            self.dump_mem(addr, size)
+            data = self._driver.get_mem(addr, int(params[0], 0))
+            self.print_buffer(addr, data)
         else:
             # dump 32 bit register at address
             addr = int(cmd, 0)
@@ -280,18 +287,18 @@ class PyStlink():
         file_name = params[-1]
         params = params[1:-1]
         if cmd == 'flash':
+            addr = self._driver.FLASH_START
             size = int(params[0], 0) if params else self._flash_size * 1024
-            mem = self._driver.get_mem(self._driver.FLASH_START, size)
-            self.store_file(mem, file_name)
         elif cmd == 'sram':
+            addr = self._driver.SRAM_START
             size = int(params[0], 0) if params else self._sram_size * 1024
-            mem = self._driver.get_mem(self._driver.SRAM_START, size)
-            self.store_file(mem, file_name)
         elif params:
-            mem = self._driver.get_mem(int(cmd, 0), int(params[0], 0))
-            self.store_file(mem, file_name)
+            addr = int(cmd, 0)
+            size = int(params[0], 0)
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
+        data = self._driver.get_mem(addr, size)
+        self.store_file(addr, data, file_name)
 
     def cmd_write(self, params):
         cmd = params[0]
@@ -307,17 +314,6 @@ class PyStlink():
             addr = int(cmd, 0)
             self._stlink.set_debugreg32(addr, data)
 
-    def cmd_upload(self, params):
-        cmd = params[0]
-        params = params[1:]
-        if not params:
-            raise lib.stlinkex.StlinkExceptionBadParam()
-        data = self.read_file(params[0])
-        if cmd == 'sram':
-            self._driver.set_mem(self._driver.SRAM_START, data)
-        else:
-            self._driver.set_mem(int(cmd, 0), data)
-
     def cmd_fill(self, params):
         cmd = params[0]
         value = int(params[-1], 0)
@@ -330,41 +326,55 @@ class PyStlink():
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 
-    def cmd_flash_write(self, params, erase=False):
-        verify = False
-        if params[0] == 'verify':
-            params = params[1:]
-            verify = True
-        data = self.read_file(params[-1])
-        if len(data) > self._flash_size * 1024:
-            raise lib.stlinkex.StlinkException('Error: selected file is bigger than FLASH size (%d B > %d B)' % (len(data), self._flash_size * 1024))
-        start_addr = int(params[0], 0) if len(params) > 1 else None
-        if start_addr is not None and (start_addr < lib.stm32.Stm32.FLASH_START):
-            raise lib.stlinkex.StlinkException('Error: selected address 0x%08x is out of FLASH space which starting at: 0x%08x' % (start_addr, lib.stm32.Stm32.FLASH_START))
-        if start_addr is not None and (start_addr + len(data)) > (lib.stm32.Stm32.FLASH_START + self._flash_size * 1024):
-            raise lib.stlinkex.StlinkException('Error: selected file is is too long to fit into FLASH space with selected address')
-        self._driver.flash_write(start_addr, data, erase=erase, verify=verify, erase_sizes=self._mcus_by_devid['erase_sizes'])
+    def cmd_upload(self, params):
+        mem = self.read_file(params[-1])
+        params = params[:-1]
+        if len(mem) == 1 and mem[0][0] is None:
+            data = mem[0][1]
+            if len(params) != 1:
+                raise lib.stlinkex.StlinkExceptionBadParam('Address is not set')
+            if params[0] == 'sram':
+                addr = self._driver.SRAM_START
+                if len(data) > self._sram_size * 1024:
+                    raise lib.stlinkex.StlinkExceptionBadParam('Data are bigger than SRAM')
+            else:
+                addr = int(params[0], 0)
+            self._driver.set_mem(addr, data)
+            return
+        if params:
+            raise lib.stlinkex.StlinkException('Address for upload is set by file')
+        for addr, data in mem:
+            self._driver.set_mem(addr, data)
 
-    def cmd_flash_erase(self, params):
-        cmd = params[0]
-        params = params[1:]
-        if cmd == 'write':
-            self.cmd_flash_write(params, erase=True)
-        else:
-            raise lib.stlinkex.StlinkExceptionBadParam()
+    def cmd_flash_write(self, params, erase=False):
+        print(params)
+        mem = self.read_file(params[-1])
+        params = params[:-1]
+        verify = False
+        if params and params[0] == 'verify':
+            verify = True
+            params = params[1:]
+        start_addr = lib.stm32.Stm32.FLASH_START
+        if len(mem) == 1 and mem[0][0] is None:
+            if params:
+                start_addr = int(params[0], 0)
+                params = params[1:]
+        if params:
+            raise lib.stlinkex.StlinkExceptionBadParam('Address for upload is set by file')
+        for addr, data in mem:
+            if addr is None:
+                addr = start_addr
+            self._driver.flash_write(addr, data, erase=erase, verify=verify, erase_sizes=self._mcus_by_devid['erase_sizes'])
 
     def cmd_flash(self, params):
-        cmd = params[0]
-        params = params[1:]
-        if cmd == 'erase':
-            if params:
-                self.cmd_flash_erase(params)
-            else:
+        erase = False
+        if params[0] == 'erase':
+            params = params[1:]
+            if not params:
                 self._driver.flash_erase_all()
-        elif cmd == 'write' and params:
-            self.cmd_flash_write(params)
-        else:
-            raise lib.stlinkex.StlinkExceptionBadParam()
+                return
+            erase = True
+        self.cmd_flash_write(params, erase=erase)
 
     def cmd(self, params):
         cmd = params[0]

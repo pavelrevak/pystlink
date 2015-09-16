@@ -270,8 +270,7 @@ class TestStm32_get_mem(unittest.TestCase):
         self._driver = lib.stm32.Stm32(stlink=MockStlink(self), dbg=MockDbg())
 
     def _test_get_mem(self, addr, size):
-        addr, data = self._driver.get_mem(addr, size)
-        self.assertEqual(addr, addr)
+        data = self._driver.get_mem(addr, size)
         expected_data = [i & 0xff for i in range(0, size)]
         self.assertEqual(data, expected_data)
 
