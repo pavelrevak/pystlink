@@ -4,32 +4,29 @@ Small python application for communicating with **ST-Link/V2** and almost all **
 
 ## Features
 
-- support **Linux**, **Mac OS/X**, **Windows**
+- running on **Linux**, **Mac OS/X** and **Windows**
 - simple command line interface
 - detect MCU
 - dump registers and memory
 - write registers
 - download memory to binary file
-- upload binary file into memory
+- upload binary or SREC file into memory
 - basic runtime control: reset, halt, step, run
-- support all **STM32Fxxx** MCUs for FLASHing
+- FLASH binary or SREC file to all **STM32F**
 
 ### Planed features
 
-- flashing support for other MCU types (STM32Lxx)
-- flashing information block (system memory, option bytes and OTP area)
+- FLASH support for other MCU types (STM32L)
+- FLASH information block (system memory, option bytes and OTP area)
 - connecting under RESET
+- stop Watchdog in debug mode to prevent device restart
 - support for more ST-Link devices connected at once
-- other file formats (SREC, HEX)
-- maybe in future connection to GDB
+- other file formats (SREC, HEX, ..)
+- pip installer
+- proxy to GDB
 - and maybe GUI
 
 ### Known bugs
-
-Instead of all unimplemented features there are these known bugs:
-
-- ~~do not write second bank of FLASH in STM32F10x XL devices (with 768KB and 1024KB FLASH)~~ Implemented but not tested yet!!!
-- do not stop WATCHDOGs in debug mode
 
 ## Install
 
@@ -37,8 +34,8 @@ Instead of all unimplemented features there are these known bugs:
 
 - **Python v3.x** (tested with python-3.4)
 - [**pyusbs**](https://github.com/walac/pyusb)
-- [**libusb**](http://libusbx.org) or other libusb
-  - for Windows copy libusb-1.0.dll into installed python: python/DLLs or into Windows/System32
+- [**libusb**](http://libusbx.org) or any other libusb driver
+  - for Windows copy libusb-1.0.dll into Windows/System32 directory
 
 ### pystlink
 
@@ -113,7 +110,7 @@ examples:
   pystlink.py flash:erase flash:verify:0x08010000:boot.bin
 ```
 
-## Supported MCUs:
+## Supported MCUs
 
 Currently all **ST32F** and **ST32L** [MCU](http://www.st.com/web/en/catalog/mmc/FM141/SC1169).
 
