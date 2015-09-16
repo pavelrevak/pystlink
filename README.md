@@ -26,8 +26,6 @@ Small python application for communicating with **ST-Link/V2** and almost all **
 - proxy to GDB
 - and maybe GUI
 
-### Known bugs
-
 ## Install
 
 ### Requirements
