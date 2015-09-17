@@ -1,6 +1,10 @@
 # PYSTLINK
 
-Python Tool for manipulating with STM32 MCUs using **ST-Link** in-system programmer and debugger.
+Python tool for manipulating with STM32 MCUs using **ST-Link** in-system programmer and debugger.
+
+## Goal
+
+Goal of this project is to bring more flexible support for different MCUs, very simple command line interface, easier integration into Makefile for direct flashing or uploading program into SRAM and many more. Also any suggestions are welcome.
 
 ## Features
 
@@ -22,12 +26,11 @@ Python Tool for manipulating with STM32 MCUs using **ST-Link** in-system program
 - connecting under RESET
 - stop Watchdog in debug mode to prevent device restart
 - support for more ST-Link devices connected at once
-- other file formats (SREC, HEX, ..)
+- other file formats (SREC, HEX, ELF, ...)
 - pip installer
 - proxy to GDB
 - and maybe GUI
-
-- support for ST-Link/V1 is NOT planed, use instead ST-Link/V2
+- support for ST-Link/V1 is NOT planed, use ST-Link/V2 instead
 
 ## Install
 
