@@ -192,7 +192,7 @@ class PyStlink():
     def detect_cpu(self):
         self._connector = lib.stlinkusb.StlinkUsbConnector(dbg=self._dbg)
         self._stlink = lib.stlinkv2.Stlink(self._connector, dbg=self._dbg)
-        self._dbg.info("STLINK: %s" % self._stlink.ver_str)
+        self._dbg.info("DEVICE: ST-Link/%s" % self._stlink.ver_str)
         self._dbg.info("SUPPLY: %.2fV" % self._stlink.target_voltage)
         self._dbg.verbose("COREID: %08x" % self._stlink.coreid)
         if self._stlink.coreid == 0:
@@ -347,7 +347,6 @@ class PyStlink():
             self._driver.set_mem(addr, data)
 
     def cmd_flash_write(self, params, erase=False):
-        print(params)
         mem = self.read_file(params[-1])
         params = params[:-1]
         verify = False

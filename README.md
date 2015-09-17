@@ -1,6 +1,6 @@
 # PYSTLINK
 
-Small python application for communicating with **ST-Link/V2** and almost all **STM32** MCUs.
+Python Tool for manipulating with STM32 MCUs using **ST-Link** in-system programmer and debugger.
 
 ## Features
 
@@ -11,8 +11,9 @@ Small python application for communicating with **ST-Link/V2** and almost all **
 - write registers
 - download memory to binary file
 - upload binary or SREC file into memory
-- basic runtime control: reset, halt, step, run
 - FLASH binary or SREC file to all **STM32F**
+- basic runtime control: reset, halt, step, run
+- support **ST-Link/V2** and **ST-Link/V2-1**
 
 ### Planed features
 
@@ -25,6 +26,8 @@ Small python application for communicating with **ST-Link/V2** and almost all **
 - pip installer
 - proxy to GDB
 - and maybe GUI
+
+- support for ST-Link/V1 is NOT planed, use instead ST-Link/V2
 
 ## Install
 

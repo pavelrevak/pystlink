@@ -67,7 +67,7 @@ class TestNotCpu(Stlink):
         ret = self._pystlink()
         self.assertEqual(ret['errors'], ['Not connected to CPU'])
         self.assertEqual(ret['warnings'], [])
-        assert 'STLINK' in ret['params']
+        assert 'DEVICE' in ret['params']
         assert 'SUPPLY' in ret['params']
         self.assertEqual(ret['output'], [])
 
@@ -81,7 +81,7 @@ class TestStm32(Stlink):
         ret = self._pystlink()
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
-        assert 'STLINK' in ret['params']
+        assert 'DEVICE' in ret['params']
         assert 'SUPPLY' in ret['params']
         assert 'CORE' in ret['params']
         assert 'MCU' in ret['params']
@@ -200,7 +200,9 @@ class TestStm32(Stlink):
         assert len(ret['output']) <= 252
         self.assertEqual(ret['output'][-1], '08000fa8')
 
-    def testDumpSram(self):
+    # TODO these two tests are disabled because
+    # if is lot of data in memory, then this script can hang
+    def _testDumpSram(self):
         ret = self._pystlink(['dump:sram'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])
@@ -209,7 +211,7 @@ class TestStm32(Stlink):
         self.assertEqual(int(ret['output'][0].split()[0], 16), self.SRAM_START)
         self.assertEqual(int(ret['output'][-1], 16), self.SRAM_START + sram_size)
 
-    def testDumpFlash(self):
+    def _testDumpFlash(self):
         ret = self._pystlink(['dump:flash'])
         self.assertEqual(ret['errors'], [])
         self.assertEqual(ret['warnings'], [])

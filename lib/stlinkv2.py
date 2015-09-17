@@ -83,20 +83,29 @@ class Stlink():
         self.read_version()
         self.leave_state()
         self.read_target_voltage()
-        self.set_swd_freq(swd_frequency)
+        if self._ver_jtag >= 22:
+            self.set_swd_freq(swd_frequency)
         self.enter_debug_swd()
         self.read_coreid()
 
     def read_version(self):
         rx = self._connector.xfer([Stlink.STLINK_GET_VERSION, 0x80], rx_len=6)
+        dev_ver = self._connector.version
         ver = int.from_bytes(rx[:2], byteorder='big')
         self._ver_stlink = (ver >> 12) & 0xf
         self._ver_jtag = (ver >> 6) & 0x3f
-        self._ver_swim = ver & 0x3f
+        self._ver_swim = ver & 0x3f if dev_ver == 'V2' else None
+        self._ver_mass = ver & 0x3f if dev_ver == 'V2-1' else None
         self._ver_api = 2 if self._ver_jtag > 11 else 1
-        self._ver_str = "V%d.J%d.S%d (API:v%d)" % (self._ver_stlink, self._ver_jtag, self._ver_swim, self._ver_api)
+        self._ver_str = "%s V%dJ%d" % (dev_ver, self._ver_stlink, self._ver_jtag)
+        if dev_ver == 'V2':
+            self._ver_str += "S%d" % self._ver_swim
+        if dev_ver == 'V2-1':
+            self._ver_str += "M%d" % self._ver_mass
+        if self.ver_api == 1:
+            raise self._dbg.warning("ST-Link/%s is not supported, please upgrade firmware." % self._ver_str)
         if self.ver_jtag < 23:
-            self._dbg.warning("ST-Link/V2 has not recent firmware version (%s), please upgrade first, functionality is not guaranteed." % self._ver_str)
+            self._dbg.warning("ST-Link/%s is not recent firmware, please upgrade first - functionality is not guaranteed." % self._ver_str)
 
     @property
     def ver_stlink(self):
@@ -104,6 +113,9 @@ class Stlink():
     @property
     def ver_jtag(self):
         return self._ver_jtag
+    @property
+    def ver_mass(self):
+        return self._ver_mass
     @property
     def ver_swim(self):
         return self._ver_swim
