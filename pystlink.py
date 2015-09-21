@@ -238,6 +238,8 @@ class PyStlink():
         if filename.endswith('.srec'):
             srec = lib.srec.Srec()
             srec.encode_file(filename)
+            size = sum([len(i[1]) for i in srec.buffers])
+            self._dbg.info("Loaded %d Bytes from %s file" % (size, filename))
             return srec.buffers
         with open(filename, 'rb') as f:
             data = list(f.read())
@@ -346,7 +348,14 @@ class PyStlink():
         for addr, data in mem:
             self._driver.set_mem(addr, data)
 
-    def cmd_flash_write(self, params, erase=False):
+    def cmd_flash(self, params):
+        erase = False
+        if params[0] == 'erase':
+            params = params[1:]
+            if not params:
+                self._driver.flash_erase_all()
+                return
+            erase = True
         mem = self.read_file(params[-1])
         params = params[:-1]
         verify = False
@@ -364,16 +373,6 @@ class PyStlink():
             if addr is None:
                 addr = start_addr
             self._driver.flash_write(addr, data, erase=erase, verify=verify, erase_sizes=self._mcus_by_devid['erase_sizes'])
-
-    def cmd_flash(self, params):
-        erase = False
-        if params[0] == 'erase':
-            params = params[1:]
-            if not params:
-                self._driver.flash_erase_all()
-                return
-            erase = True
-        self.cmd_flash_write(params, erase=erase)
 
     def cmd(self, params):
         cmd = params[0]
