@@ -90,6 +90,7 @@ class Stlink():
 
     def read_version(self):
         rx = self._connector.xfer([Stlink.STLINK_GET_VERSION, 0x80], rx_len=6)
+        rx = self._connector.xfer([Stlink.STLINK_GET_VERSION, 0x80], rx_len=6)
         dev_ver = self._connector.version
         ver = int.from_bytes(rx[:2], byteorder='big')
         self._ver_stlink = (ver >> 12) & 0xf
