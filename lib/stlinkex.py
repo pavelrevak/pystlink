@@ -7,8 +7,9 @@ class StlinkException(Exception):
 
 
 class StlinkExceptionBadParam(StlinkException):
-    def __init__(self, info=None):
+    def __init__(self, info=None, cmd=None):
         self._info = info
+        self._cmd = cmd
 
     def set_cmd(self, cmd):
         self._cmd = cmd

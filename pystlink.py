@@ -1,4 +1,5 @@
 import sys
+import argparse
 import time
 import lib.stlinkusb
 import lib.stlinkv2
@@ -10,99 +11,73 @@ import lib.stlinkex
 import lib.dbg
 import lib.srec
 
+VERSION_STR = "pystlink v0.0.0 (ST-LinkV2)"
+
+DESCRIPTION_STR = VERSION_STR + """
+(c)2015 by pavel.revak@gmail.com
+https://github.com/pavelrevak/pystlink
+"""
+
+ACTIONS_HELP_STR = """
+list of available actions:
+  dump:core              print all core registers (halt core)
+  dump:{reg}             print core register (halt core)
+  dump:{addr}:{size}     print content of memory
+  dump:sram[:{size}]     print content of SRAM memory
+  dump:flash[:{size}]    print content of FLASH memory
+  dump:{addr}            print content of 32 bit memory register
+  dump16:{addr}          print content of 16 bit memory register
+  dump8:{addr}           print content of 8 bit memory register
+
+  write:{reg}:{data}     write register (halt core)
+  write:{addr}:{data}    write 32 bit memory register
+
+  read:{addr}:{size}:{file}      read memory with size into file
+  read:sram[:{size}]:{file}      read SRAM into file
+  read:flash[:{size}]:{file}     read FLASH into file
+
+  fill:{addr}:{size}:{pattern}   fill memory with a pattern
+  fill:sram[:{size}]:{pattern}   fill SRAM memory with a pattern
+
+  upload:{file.srec}     upload SREC file into memory
+  upload:{addr}:{file}   upload binary file into memory
+  upload:sram:{file}     upload binary file into SRAM memory
+
+  flash:erase            complete erase FLASH memory aka mass erase
+  flash[:erase][:verify]:{file.srec}     erase + flash SREC file + verify
+  flash[:erase][:verify][:{addr}]:{file} erase + flash binary file + verify
+
+  reset                  reset core
+  reset:halt             reset and halt core
+  halt                   halt core
+  step                   step core
+  run                    run core
+
+  sleep:{seconds}        sleep (float) - insert delay between commands
+
+  (numerical values can be in different formats, like: 42, 0x2a, 0o52, 0b101010)
+
+examples:
+  pystlink.py --help
+  pystlink.py -v --cpu STM32F051R8
+  pystlink.py -q --cpu STM32F03 dump:flash dump:sram
+  pystlink.py dump:0x08000000:256
+  pystlink.py write:0x48000018:0x00000100 dump:0x48000014
+  pystlink.py read:sram:256:aaa.bin read:flash:bbb.bin
+  pystlink.py -n reset:halt write:pc:0x20000010 dump:pc core:step dump:all
+  pystlink.py flash:erase:verify:app.bin
+  pystlink.py flash:erase flash:verify:0x08010000:boot.bin
+"""
+
 
 class PyStlink():
     CPUID_REG = 0xe000ed00
 
-    VERBOSE_CMDS = {
-        '-q': 0, '--quiet': 0,
-        '-i': 1, '--info': 1,
-        '-v': 2, '--verbose': 2,
-        '-d': 3, '--debug': 3
-    }
-
-    def __init__(self, dbg):
+    def __init__(self):
         self._start_time = time.time()
-        self._dbg = dbg
         self._connector = None
         self._stlink = None
         self._driver = None
-        self._stay_in_debug = False
-        self._expected_cpu = None
-
-    def print_version(self):
-        print("  ST-LinkV2 for python v0.0.0")
-        print("(c)2015 by pavel.revak@gmail.com")
-        print("https://github.com/pavelrevak/pystlink")
-        print()
-
-    def print_help(self):
-        self.print_version()
-        print("usage:")
-        print("  %s [options] [commands ...]" % sys.argv[0])
-        print()
-        print("options:")
-        print("  -h --help          show this help")
-        print("  -V --version       show version")
-        print("  -n --norun         don't run core when disconnecting from ST-Link (when program end)")
-        print("  -c --cpu {cputype} set expected cputype, eg: STM32F051R8 or STM32L4")
-        print()
-        print("verbose:")
-        print("  all verbose modes can also use between any commands (to set verbosity of any commands)")
-        print("  -q --quiet         set quiet")
-        print("  -i --info          set info (default)")
-        print("  -v --verbose       set verbose")
-        print("  -d --debug         set debug")
-        print()
-        print("commands:")
-        print("  (address and size can be in different numeric formats, like: 123, 0x1ac, 0o137, 0b1011)")
-        print("  dump:core              print all core registers (halt core)")
-        print("  dump:{reg}             print core register (halt core)")
-        print("  dump:{addr}:{size}     print content of memory")
-        print("  dump:sram[:{size}]     print content of SRAM memory")
-        print("  dump:flash[:{size}]    print content of FLASH memory")
-        print("  dump:{addr}            print content of 32 bit memory register")
-        print("  dump16:{addr}          print content of 16 bit memory register")
-        print("  dump8:{addr}           print content of 8 bit memory register")
-        print()
-        print("  write:{reg}:{data}     write register (halt core)")
-        print("  write:{addr}:{data}    write 32 bit memory register")
-        print()
-        print("  download:{addr}:{size}:{file}      download memory with size into file")
-        print("  download:sram[:{size}]:{file}      download SRAM into file")
-        print("  download:flash[:{size}]:{file}     download FLASH into file")
-        print()
-        print("  fill:{addr}:{size}:{pattern}   fill memory with a pattern")
-        print("  fill:sram[:{size}]:{pattern}   fill SRAM memory with a pattern")
-        print()
-        print("  upload:{file.srec}     upload SREC file into memory")
-        print("  upload:{addr}:{file}   upload binary file into memory")
-        print("  upload:sram:{file}     upload binary file into SRAM memory")
-        print()
-        print("  flash:erase            complete erase FLASH memory aka mass erase")
-        print("  flash[:erase][:verify]:{file.srec}     erase + flash SREC file + verify")
-        print("  flash[:erase][:verify][:{addr}]:{file} erase + flash binary file + verify")
-        print()
-        print("  reset                  reset core")
-        print("  reset:halt             reset and halt core")
-        print("  halt                   halt core")
-        print("  step                   step core")
-        print("  run                    run core")
-        print()
-        print("  sleep:{seconds}        sleep (float) - insert delay between commands")
-        print()
-        print("examples:")
-        program_name = sys.argv[0]
-        print("  %s --help" % program_name)
-        print("  %s -v --cpu STM32F051R8" % program_name)
-        print("  %s -q --cpu STM32F03 dump:flash dump:sram" % program_name)
-        print("  %s dump:0x08000000:256" % program_name)
-        print("  %s write:0x48000018:0x00000100 dump:0x48000014" % program_name)
-        print("  %s download:sram:256:aaa.bin download:flash:bbb.bin" % program_name)
-        print("  %s -n reset:halt write:pc:0x20000010 dump:pc core:step dump:all" % program_name)
-        print("  %s flash:erase:verify:app.bin" % program_name)
-        print("  %s flash:erase flash:verify:0x08010000:boot.bin" % program_name)
-        print()
 
     def find_mcus_by_core(self):
         cpuid = self._stlink.get_debugreg32(PyStlink.CPUID_REG)
@@ -135,26 +110,33 @@ class PyStlink():
                 self._mcus_by_devid['dev_id'], self._flash_size
             ))
 
-    def find_mcus_by_mcu_type(self, mcu_type):
-        mcu_type = mcu_type.upper()
-        if not mcu_type.startswith('STM32'):
-            raise lib.stlinkex.StlinkException('Selected CPU is not STM32 family')
-        # change character on 10 position to 'x' where is package size code
-        if len(mcu_type) > 9:
-            mcu_type = list(mcu_type)
-            mcu_type[9] = 'x'
-            mcu_type = ''.join(mcu_type)
-        mcus = []
-        for mcu in self._mcus:
-            if mcu['type'].startswith(mcu_type):
-                mcus.append(mcu)
-        if not mcus:
+    def fix_cpu_type(self, cpu_type):
+        cpu_type = cpu_type.upper()
+        # now support only STM32
+        if cpu_type.startswith('STM32'):
+            # change character on 10 position to 'x' where is package size code
+            if len(cpu_type) > 9:
+                cpu_type = list(cpu_type)
+                cpu_type[9] = 'x'
+                cpu_type = ''.join(cpu_type)
+            return cpu_type
+        raise lib.stlinkex.StlinkException('"%s" is not STM32 family' % cpu_type)
+
+    def filter_detected_cpu(self, expected_cpus):
+        cpus = []
+        for detected_cpu in self._mcus:
+            for expected_cpu in expected_cpus:
+                expected_cpu = self.fix_cpu_type(expected_cpu)
+                if detected_cpu['type'].startswith(expected_cpu):
+                    cpus.append(detected_cpu)
+                    break
+        if not cpus:
             raise lib.stlinkex.StlinkException('Connected CPU is not %s but detected is %s %s' % (
-                mcu_type,
+                ','.join(expected_cpus),
                 'one of' if len(self._mcus) > 1 else '',
-                ','.join([mcu['type'] for mcu in self._mcus]),
+                ','.join([cpu['type'] for cpu in self._mcus]),
             ))
-        return mcus
+        self._mcus = cpus
 
     def find_sram_eeprom_size(self):
         # if is found more MCUS, then SRAM and EEPROM size
@@ -186,10 +168,7 @@ class PyStlink():
         else:
             self._driver = lib.stm32.Stm32(self._stlink, dbg=self._dbg)
 
-    def is_mcu_selected(self):
-        return bool(self._driver)
-
-    def detect_cpu(self):
+    def detect_cpu(self, expected_cpus):
         self._connector = lib.stlinkusb.StlinkUsbConnector(dbg=self._dbg)
         self._stlink = lib.stlinkv2.Stlink(self._connector, dbg=self._dbg)
         self._dbg.info("DEVICE: ST-Link/%s" % self._stlink.ver_str)
@@ -201,9 +180,9 @@ class PyStlink():
         self._dbg.info("CORE:   %s" % self._mcus_by_core['core'])
         self.find_mcus_by_devid()
         self.find_mcus_by_flash_size()
-        if self._expected_cpu:
+        if expected_cpus:
             # filter found MCUs by selected MCU type
-            self._mcus = self.find_mcus_by_mcu_type(self._expected_cpu)
+            self.filter_detected_cpu(expected_cpus)
         self._dbg.info("MCU:    %s" % '/'.join([mcu['type'] for mcu in self._mcus]))
         self._dbg.info("FLASH:  %dKB" % self._flash_size)
         self.find_sram_eeprom_size()
@@ -248,6 +227,7 @@ class PyStlink():
         raise lib.stlinkex.StlinkException("Error reading file")
 
     def dump_mem(self, addr, size):
+        print("08x %d" % addr, size)
         data = self._driver.get_mem(addr, size)
         self.print_buffer(addr, data)
 
@@ -284,7 +264,7 @@ class PyStlink():
             val = self._stlink.get_debugreg32(addr)
             print('  %08x: %08x' % (addr, val))
 
-    def cmd_download(self, params):
+    def cmd_read(self, params):
         cmd = params[0]
         file_name = params[-1]
         params = params[1:-1]
@@ -302,7 +282,7 @@ class PyStlink():
         data = self._driver.get_mem(addr, size)
         self.store_file(addr, data, file_name)
 
-    def cmd_write(self, params):
+    def cmd_set(self, params):
         cmd = params[0]
         params = params[1:]
         if not params:
@@ -328,7 +308,7 @@ class PyStlink():
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 
-    def cmd_upload(self, params):
+    def cmd_write(self, params):
         mem = self.read_file(params[-1])
         params = params[:-1]
         if len(mem) == 1 and mem[0][0] is None:
@@ -344,7 +324,7 @@ class PyStlink():
             self._driver.set_mem(addr, data)
             return
         if params:
-            raise lib.stlinkex.StlinkException('Address for upload is set by file')
+            raise lib.stlinkex.StlinkException('Address for write is set by file')
         for addr, data in mem:
             self._driver.set_mem(addr, data)
 
@@ -368,15 +348,15 @@ class PyStlink():
                 start_addr = int(params[0], 0)
                 params = params[1:]
         if params:
-            raise lib.stlinkex.StlinkExceptionBadParam('Address for upload is set by file')
+            raise lib.stlinkex.StlinkExceptionBadParam('Address for write is set by file')
         for addr, data in mem:
             if addr is None:
                 addr = start_addr
             self._driver.flash_write(addr, data, erase=erase, verify=verify, erase_sizes=self._mcus_by_devid['erase_sizes'])
 
-    def cmd(self, params):
-        cmd = params[0]
-        params = params[1:]
+    def cmd(self, param):
+        cmd = param[0]
+        params = param[1:]
         if cmd == 'dump' and params:
             self.cmd_dump(params)
         elif cmd == 'dump16' and params:
@@ -387,12 +367,12 @@ class PyStlink():
             addr = int(params[0], 0)
             reg = self._stlink.get_debugreg8(addr)
             print('  %08x: %02x' % (addr, reg))
-        elif cmd == 'download' and params:
-            self.cmd_download(params)
+        elif cmd == 'read' and params:
+            self.cmd_read(params)
+        elif cmd == 'set' and params:
+            self.cmd_set(params)
         elif cmd == 'write' and params:
             self.cmd_write(params)
-        elif cmd == 'upload' and params:
-            self.cmd_upload(params)
         elif cmd == 'fill' and params:
             self.cmd_fill(params)
         elif cmd == 'flash' and params:
@@ -416,82 +396,50 @@ class PyStlink():
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 
-    def parse_option_cmd(self, argv):
-        if argv[0] in PyStlink.VERBOSE_CMDS:
-            self._dbg.set_verbose(PyStlink.VERBOSE_CMDS[argv[0]])
-        elif argv[0] in ['--norun', '-n']:
-            self._stay_in_debug = True
-        else:
-            return 0
-        return 1
-
-    def parse_option(self, argv):
-        if argv[0] in ['--help', '-h']:
-            self.print_help()
-            sys.exit(0)
-        if argv[0] in ['--version', '-V']:
-            self.print_version()
-            sys.exit(0)
-        if argv[0] in ['--cpu', '-c']:
-            if self._expected_cpu is not None:
-                raise lib.stlinkex.StlinkExceptionBadParam('CPU type is already set')
-            if len(argv) < 2:
-                raise lib.stlinkex.StlinkExceptionBadParam('CPU type is not entered')
-            self._expected_cpu = argv[1]
-            if not self._expected_cpu.upper().startswith('STM32'):
-                raise lib.stlinkex.StlinkExceptionBadParam('%s CPU is not STM32 family' % self._expected_cpu)
-            return 2
-        else:
-            return self.parse_option_cmd(argv)
-        return 1
-
     def start(self):
-        argv = sys.argv[1:]
+        parser = argparse.ArgumentParser(prog='pystlink', formatter_class=argparse.RawTextHelpFormatter, description=DESCRIPTION_STR, epilog=ACTIONS_HELP_STR)
+        group_verbose = parser.add_argument_group(title='set verbosity level').add_mutually_exclusive_group()
+        group_verbose.set_defaults(verbosity=1)
+        group_verbose.add_argument('-q', '--quiet', action='store_const', dest='verbosity', const=0)
+        group_verbose.add_argument('-i', '--info', action='store_const', dest='verbosity', const=1, help='default')
+        group_verbose.add_argument('-v', '--verbose', action='store_const', dest='verbosity', const=2)
+        group_verbose.add_argument('-d', '--debug', action='store_const', dest='verbosity', const=3)
+        parser.add_argument('-V', '--version', action='version', version=VERSION_STR)
+        parser.add_argument('-c', '--cpu', action='append', help='set expected CPU type [eg: STM32F051, STM32L4]')
+        parser.add_argument('-n', '--norun', action='store_true', help='do not run core when program end (if core was halted)')
+        group_actions = parser.add_argument_group(title='actions')
+        group_actions.add_argument('action', nargs='*', help='actions will be processed sequentially')
+        args = parser.parse_args()
+        self._dbg = lib.dbg.Dbg(args.verbosity)
         runtime_status = 0
         try:
-            while argv and argv[0].startswith('-'):
-                args = self.parse_option(argv)
-                if args:
-                    argv = argv[args:]
-                    continue
-                raise lib.stlinkex.StlinkExceptionBadParam()
-            self.detect_cpu()
-            if argv and (self._driver is None or not self.is_mcu_selected()):
+            self.detect_cpu(args.cpu)
+            if args.action and self._driver is None:
                 raise lib.stlinkex.StlinkExceptionCpuNotSelected()
-            while argv:
-                if argv[0].startswith('-'):
-                    args = self.parse_option_cmd(argv)
-                    if args:
-                        argv = argv[args:]
-                        continue
-                    raise lib.stlinkex.StlinkExceptionBadParam()
-                self._dbg.verbose('CMD: %s' % argv[0])
-                self.cmd(argv[0].split(':'))
-                argv = argv[1:]
-        except ValueError:
-            self._dbg.error('Bad numeric velue in param: %s' % argv[0])
-            runtime_status = 1
-        except OverflowError:
-            self._dbg.error('Too big number in param: %s' % argv[0])
-            runtime_status = 1
-        except lib.stlinkex.StlinkExceptionBadParam as e:
-            e.set_cmd(argv[0])
-            self._dbg.error(e)
-            runtime_status = 1
-        except lib.stlinkex.StlinkException as e:
+            for action in args.action:
+                self._dbg.verbose('CMD: %s' % action)
+                try:
+                    self.cmd(action.split(':'))
+                except lib.stlinkex.StlinkExceptionBadParam as e:
+                    raise e.set_cmd(action)
+        except (lib.stlinkex.StlinkExceptionBadParam, lib.stlinkex.StlinkException) as e:
             self._dbg.error(e)
             runtime_status = 1
         except KeyboardInterrupt:
             self._dbg.error('Keyboard interrupt')
             runtime_status = 1
-        if self._driver and self.is_mcu_selected():
-            # disconnect from MCU
+        except (ValueError, OverflowError, FileNotFoundError, Exception) as e:
+            self._dbg.error('Parameter error: %s' % e)
+            runtime_status = 1
+        if self._stlink:
             try:
-                if self._stay_in_debug:
-                    self._dbg.warning('CPU remain in debug mode', level=1)
-                else:
-                    self._driver.core_nodebug()
+                if self._driver:
+                    if args.norun:
+                        self._dbg.warning('CPU remain in debug mode', level=1)
+                    else:
+                        self._driver.core_nodebug()
                 self._stlink.leave_state()
+                self._stlink.clean_exit()
             except lib.stlinkex.StlinkException as e:
                 self._dbg.error(e)
                 runtime_status = 1
@@ -501,6 +449,5 @@ class PyStlink():
 
 
 if __name__ == "__main__":
-    dbg = lib.dbg.Dbg(verbose=1)
-    pystlink = PyStlink(dbg)
+    pystlink = PyStlink()
     pystlink.start()

@@ -25,7 +25,7 @@ class Stlink(unittest.TestCase):
             if e.startswith('***') and e.endswith('***'):
                 errors.append(e.strip('***').strip())
             elif e.startswith('*'):
-                errors.append(e.strip('*').strip())
+                warnings.append(e.strip('*').strip())
             else:
                 if e:
                     debug.append(e)
@@ -121,8 +121,8 @@ class TestStm32(Stlink):
 
     def testNorun(self):
         ret = self._pystlink(['--norun'])
-        self.assertEqual(ret['errors'], ['CPU remain in debug mode'])
-        self.assertEqual(ret['warnings'], [])
+        self.assertEqual(ret['errors'], [])
+        self.assertEqual(ret['warnings'], ['CPU remain in debug mode'])
         self.assertEqual(ret['output'], [])
 
     def testDumpRegAll(self):
@@ -223,7 +223,7 @@ class TestStm32(Stlink):
     def testWriteRegR0(self):
         ret = self._pystlink([
             'reset:halt',
-            'write:R0:0x12345678',
+            'set:R0:0x12345678',
             'dump:R0',
         ])
         self.assertEqual(ret['errors'], [])
@@ -233,7 +233,7 @@ class TestStm32(Stlink):
     def testWriteReg(self):
         ret = self._pystlink([
             'reset:halt',
-            'write:0x20000000:0x12345678',
+            'set:0x20000000:0x12345678',
             'dump:0x20000000',
         ])
         self.assertEqual(ret['errors'], [])
@@ -243,8 +243,8 @@ class TestStm32(Stlink):
     def testCoreStepCode(self):
         ret = self._pystlink([
             'reset:halt',
-            'write:0x20000000:0x46c046c0',  # 2 x THMUB NOP (MOV R8, R8) instructions into begin of RAM
-            'write:pc:0x20000000',  # set PC to begin of RAM
+            'set:0x20000000:0x46c046c0',  # 2 x THMUB NOP (MOV R8, R8) instructions into begin of RAM
+            'set:pc:0x20000000',  # set PC to begin of RAM
             'dump:pc',
             'step',
             'dump:pc',

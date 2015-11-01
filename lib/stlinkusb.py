@@ -25,6 +25,7 @@ class StlinkUsbConnector():
     def __init__(self, dbg=None):
         self._dbg = dbg
         self._dev_type = None
+        self._xfer_counter = 0
         for dev_type in StlinkUsbConnector.DEV_TYPES:
             self._dbg.debug("Connecting to ST-Link/%s %04x:%04x" % (dev_type['version'], dev_type['idVendor'], dev_type['idProduct']))
             self._dev = usb.core.find(idVendor=dev_type['idVendor'], idProduct=dev_type['idProduct'])
@@ -38,25 +39,39 @@ class StlinkUsbConnector():
     def version(self):
         return self._dev_type['version']
 
+    @property
+    def xfer_counter(self):
+        return self._xfer_counter
+
     def _write(self, data):
         self._dbg.debug("  USB > %s" % ' '.join(['%02x' % i for i in data]))
-        count = self._dev.write(self._dev_type['outPipe'], data, 0)
+        self._xfer_counter += 1
+        count = self._dev.write(self._dev_type['outPipe'], data, 1000)
         if count != len(data):
             raise lib.stlinkex.StlinkException("Error, only %d Bytes was transmitted to ST-Link instead of expected %d" % (count, len(data)))
 
     def _read(self, size):
-        data = self._dev.read(self._dev_type['inPipe'], size, 0).tolist()
+        read_size = size
+        if read_size < 64:
+            read_size = 64
+        elif read_size % 4:
+            read_size += 3
+            read_size &= 0xffc
+        data = self._dev.read(self._dev_type['inPipe'], read_size, 1000).tolist()
         self._dbg.debug("  USB < %s" % ' '.join(['%02x' % i for i in data]))
-        return data
+        return data[:size]
 
     def xfer(self, cmd, data=None, rx_len=None):
-        if len(cmd) > self.STLINK_CMD_SIZE_V2:
-            raise lib.stlinkex.StlinkException("Error too many Bytes in command: %d, maximum is %d" % (len(cmd), self.STLINK_CMD_SIZE_V2))
-        # pad to 16 bytes
-        cmd += [0] * (self.STLINK_CMD_SIZE_V2 - len(cmd))
-        self._write(cmd)
-        if data:
-            self._write(data)
-        if rx_len:
-            return self._read(rx_len)
+        try:
+            if len(cmd) > self.STLINK_CMD_SIZE_V2:
+                raise lib.stlinkex.StlinkException("Error too many Bytes in command: %d, maximum is %d" % (len(cmd), self.STLINK_CMD_SIZE_V2))
+            # pad to 16 bytes
+            cmd += [0] * (self.STLINK_CMD_SIZE_V2 - len(cmd))
+            self._write(cmd)
+            if data:
+                self._write(data)
+            if rx_len:
+                return self._read(rx_len)
+        except usb.core.USBError as e:
+            raise lib.stlinkex.StlinkException("USB Error: %s" % e)
         return None

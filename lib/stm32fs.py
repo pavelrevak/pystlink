@@ -29,60 +29,59 @@ class Flash():
     # R4: STM32_FLASH_SR
     # R5: FLASH_SR_BUSY_BIT
     FLASH_WRITER_F4_CODE_X8 = [
-                    # write:
-        0x03, 0x78, # 0x7803    # ldrh r3, [r0]
-        0x0b, 0x70, # 0x700b    # strh r3, [r1]
-                    # test_busy:
-        0x23, 0x68, # 0x6823    # ldr r3, [r4]
-        0x2b, 0x42, # 0x422b    # tst r3, r5
-        0xfc, 0xd1, # 0xd1fc    # bne <test_busy>
-        0x00, 0x2b, # 0x2b00    # cmp r3, #0
-        0x04, 0xd1, # 0xd104    # bne <exit>
-        0x01, 0x30, # 0x3001    # adds r0, #1
-        0x01, 0x31, # 0x3101    # adds r1, #1
-        0x01, 0x3a, # 0x3a01    # subs r2, #1
-        0x00, 0x2a, # 0x2a00    # cmp r2, #0
-        0xf3, 0xd1, # 0xd1f3    # bne <write>
-                    # exit:
-        0x00, 0xbe, # 0xbe00    # bkpt 0x00
+        # write:
+        0x03, 0x78,  # 0x7803    # ldrh r3, [r0]
+        0x0b, 0x70,  # 0x700b    # strh r3, [r1]
+        # test_busy:
+        0x23, 0x68,  # 0x6823    # ldr r3, [r4]
+        0x2b, 0x42,  # 0x422b    # tst r3, r5
+        0xfc, 0xd1,  # 0xd1fc    # bne <test_busy>
+        0x00, 0x2b,  # 0x2b00    # cmp r3, #0
+        0x04, 0xd1,  # 0xd104    # bne <exit>
+        0x01, 0x30,  # 0x3001    # adds r0, #1
+        0x01, 0x31,  # 0x3101    # adds r1, #1
+        0x01, 0x3a,  # 0x3a01    # subs r2, #1
+        0x00, 0x2a,  # 0x2a00    # cmp r2, #0
+        0xf3, 0xd1,  # 0xd1f3    # bne <write>
+        # exit:
+        0x00, 0xbe,  # 0xbe00    # bkpt 0x00
     ]
     FLASH_WRITER_F4_CODE_X16 = [
-                    # write:
-        0x03, 0x88, # 0x8803    # ldrh r3, [r0]
-        0x0b, 0x80, # 0x800b    # strh r3, [r1]
-                    # test_busy:
-        0x23, 0x68, # 0x6823    # ldr r3, [r4]
-        0x2b, 0x42, # 0x422b    # tst r3, r5
-        0xfc, 0xd1, # 0xd1fc    # bne <test_busy>
-        0x00, 0x2b, # 0x2b00    # cmp r3, #0
-        0x04, 0xd1, # 0xd104    # bne <exit>
-        0x02, 0x30, # 0x3002    # adds r0, #2
-        0x02, 0x31, # 0x3102    # adds r1, #2
-        0x02, 0x3a, # 0x3a02    # subs r2, #2
-        0x00, 0x2a, # 0x2a00    # cmp r2, #0
-        0xf3, 0xd1, # 0xd1f3    # bne <write>
-                    # exit:
-        0x00, 0xbe, # 0xbe00    # bkpt 0x00
+        # write:
+        0x03, 0x88,  # 0x8803    # ldrh r3, [r0]
+        0x0b, 0x80,  # 0x800b    # strh r3, [r1]
+        # test_busy:
+        0x23, 0x68,  # 0x6823    # ldr r3, [r4]
+        0x2b, 0x42,  # 0x422b    # tst r3, r5
+        0xfc, 0xd1,  # 0xd1fc    # bne <test_busy>
+        0x00, 0x2b,  # 0x2b00    # cmp r3, #0
+        0x04, 0xd1,  # 0xd104    # bne <exit>
+        0x02, 0x30,  # 0x3002    # adds r0, #2
+        0x02, 0x31,  # 0x3102    # adds r1, #2
+        0x02, 0x3a,  # 0x3a02    # subs r2, #2
+        0x00, 0x2a,  # 0x2a00    # cmp r2, #0
+        0xf3, 0xd1,  # 0xd1f3    # bne <write>
+        # exit:
+        0x00, 0xbe,  # 0xbe00    # bkpt 0x00
     ]
     FLASH_WRITER_F4_CODE_X32 = [
-                    # write:
-        0x03, 0x68, # 0x6803    # ldr r3, [r0]
-        0x0b, 0x60, # 0x600b    # str r3, [r1]
-                    # test_busy:
-        0x23, 0x68, # 0x6823    # ldr r3, [r4]
-        0x2b, 0x42, # 0x422b    # tst r3, r5
-        0xfc, 0xd1, # 0xd1fc    # bne <test_busy>
-        0x00, 0x2b, # 0x2b00    # cmp r3, #0
-        0x04, 0xd1, # 0xd104    # bne <exit>
-        0x04, 0x30, # 0x3004    # adds r0, #4
-        0x04, 0x31, # 0x3104    # adds r1, #4
-        0x04, 0x3a, # 0x3a04    # subs r2, #4
-        0x00, 0x2a, # 0x2a00    # cmp r2, #0
-        0xf3, 0xd1, # 0xd1f3    # bne <write>
-                    # exit:
-        0x00, 0xbe, # 0xbe00    # bkpt 0x00
+        # write:
+        0x03, 0x68,  # 0x6803    # ldr r3, [r0]
+        0x0b, 0x60,  # 0x600b    # str r3, [r1]
+        # test_busy:
+        0x23, 0x68,  # 0x6823    # ldr r3, [r4]
+        0x2b, 0x42,  # 0x422b    # tst r3, r5
+        0xfc, 0xd1,  # 0xd1fc    # bne <test_busy>
+        0x00, 0x2b,  # 0x2b00    # cmp r3, #0
+        0x04, 0xd1,  # 0xd104    # bne <exit>
+        0x04, 0x30,  # 0x3004    # adds r0, #4
+        0x04, 0x31,  # 0x3104    # adds r1, #4
+        0x04, 0x3a,  # 0x3a04    # subs r2, #4
+        0x00, 0x2a,  # 0x2a00    # cmp r2, #0
+        0xf3, 0xd1,  # 0xd1f3    # bne <write>
+        # exit:
+        0x00, 0xbe,  # 0xbe00    # bkpt 0x00
     ]
-
 
     VOLTAGE_DEPENDEND_PARAMS = [
         {
@@ -224,8 +223,8 @@ class Stm32FS(lib.stm32.Stm32):
         self._dbg.debug('Stm32FS.flash_write(%s, [data:%dBytes], erase=%s, verify=%s, erase_sizes=%s)' % (('0x%08x' % addr) if addr is not None else 'None', len(data), erase, verify, erase_sizes))
         if addr is None:
             addr = self.FLASH_START
-        if addr % 2:
-            raise lib.stlinkex.StlinkException('Address is not alligned')
+        if addr % 4:
+            raise lib.stlinkex.StlinkException('Start address is not aligned to word')
         # align data
         if len(data) % 4:
             data.extend([0xff] * (4 - len(data) % 4))

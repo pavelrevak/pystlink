@@ -1,63 +1,64 @@
 import lib.stlinkex
 
+
 class Stlink():
-    STLINK_GET_VERSION                  = 0xf1
-    STLINK_DEBUG_COMMAND                = 0xf2
-    STLINK_DFU_COMMAND                  = 0xf3
-    STLINK_SWIM_COMMAND                 = 0xf4
-    STLINK_GET_CURRENT_MODE             = 0xf5
-    STLINK_GET_TARGET_VOLTAGE           = 0xf7
+    STLINK_GET_VERSION = 0xf1
+    STLINK_DEBUG_COMMAND = 0xf2
+    STLINK_DFU_COMMAND = 0xf3
+    STLINK_SWIM_COMMAND = 0xf4
+    STLINK_GET_CURRENT_MODE = 0xf5
+    STLINK_GET_TARGET_VOLTAGE = 0xf7
 
-    STLINK_MODE_DFU                     = 0x00
-    STLINK_MODE_MASS                    = 0x01
-    STLINK_MODE_DEBUG                   = 0x02
-    STLINK_MODE_SWIM                    = 0x03
-    STLINK_MODE_BOOTLOADER              = 0x04
+    STLINK_MODE_DFU = 0x00
+    STLINK_MODE_MASS = 0x01
+    STLINK_MODE_DEBUG = 0x02
+    STLINK_MODE_SWIM = 0x03
+    STLINK_MODE_BOOTLOADER = 0x04
 
-    STLINK_DFU_EXIT                     = 0x07
+    STLINK_DFU_EXIT = 0x07
 
-    STLINK_SWIM_ENTER                   = 0x00
-    STLINK_SWIM_EXIT                    = 0x01
+    STLINK_SWIM_ENTER = 0x00
+    STLINK_SWIM_EXIT = 0x01
 
-    STLINK_DEBUG_ENTER_JTAG             = 0x00
-    STLINK_DEBUG_STATUS                 = 0x01
-    STLINK_DEBUG_FORCEDEBUG             = 0x02
-    STLINK_DEBUG_APIV1_RESETSYS         = 0x03
-    STLINK_DEBUG_APIV1_READALLREGS      = 0x04
-    STLINK_DEBUG_APIV1_READREG          = 0x05
-    STLINK_DEBUG_APIV1_WRITEREG         = 0x06
-    STLINK_DEBUG_READMEM_32BIT          = 0x07
-    STLINK_DEBUG_WRITEMEM_32BIT         = 0x08
-    STLINK_DEBUG_RUNCORE                = 0x09
-    STLINK_DEBUG_STEPCORE               = 0x0a
-    STLINK_DEBUG_APIV1_SETFP            = 0x0b
-    STLINK_DEBUG_READMEM_8BIT           = 0x0c
-    STLINK_DEBUG_WRITEMEM_8BIT          = 0x0d
-    STLINK_DEBUG_APIV1_CLEARFP          = 0x0e
-    STLINK_DEBUG_APIV1_WRITEDEBUGREG    = 0x0f
-    STLINK_DEBUG_APIV1_SETWATCHPOINT    = 0x10
-    STLINK_DEBUG_APIV1_ENTER            = 0x20
-    STLINK_DEBUG_EXIT                   = 0x21
-    STLINK_DEBUG_READCOREID             = 0x22
-    STLINK_DEBUG_APIV2_ENTER            = 0x30
-    STLINK_DEBUG_APIV2_READ_IDCODES     = 0x31
-    STLINK_DEBUG_APIV2_RESETSYS         = 0x32
-    STLINK_DEBUG_APIV2_READREG          = 0x33
-    STLINK_DEBUG_APIV2_WRITEREG         = 0x34
-    STLINK_DEBUG_APIV2_WRITEDEBUGREG    = 0x35
-    STLINK_DEBUG_APIV2_READDEBUGREG     = 0x36
-    STLINK_DEBUG_APIV2_READALLREGS      = 0x3a
-    STLINK_DEBUG_APIV2_GETLASTRWSTATUS  = 0x3b
-    STLINK_DEBUG_APIV2_DRIVE_NRST       = 0x3c
-    STLINK_DEBUG_UNKNOWN_MAYBE_SYNC     = 0x3e
-    STLINK_DEBUG_APIV2_START_TRACE_RX   = 0x40
-    STLINK_DEBUG_APIV2_STOP_TRACE_RX    = 0x41
-    STLINK_DEBUG_APIV2_GET_TRACE_NB     = 0x42
-    STLINK_DEBUG_APIV2_SWD_SET_FREQ     = 0x43
-    STLINK_DEBUG_ENTER_SWD              = 0xa3
+    STLINK_DEBUG_ENTER_JTAG = 0x00
+    STLINK_DEBUG_STATUS = 0x01
+    STLINK_DEBUG_FORCEDEBUG = 0x02
+    STLINK_DEBUG_APIV1_RESETSYS = 0x03
+    STLINK_DEBUG_APIV1_READALLREGS = 0x04
+    STLINK_DEBUG_APIV1_READREG = 0x05
+    STLINK_DEBUG_APIV1_WRITEREG = 0x06
+    STLINK_DEBUG_READMEM_32BIT = 0x07
+    STLINK_DEBUG_WRITEMEM_32BIT = 0x08
+    STLINK_DEBUG_RUNCORE = 0x09
+    STLINK_DEBUG_STEPCORE = 0x0a
+    STLINK_DEBUG_APIV1_SETFP = 0x0b
+    STLINK_DEBUG_READMEM_8BIT = 0x0c
+    STLINK_DEBUG_WRITEMEM_8BIT = 0x0d
+    STLINK_DEBUG_APIV1_CLEARFP = 0x0e
+    STLINK_DEBUG_APIV1_WRITEDEBUGREG = 0x0f
+    STLINK_DEBUG_APIV1_SETWATCHPOINT = 0x10
+    STLINK_DEBUG_APIV1_ENTER = 0x20
+    STLINK_DEBUG_EXIT = 0x21
+    STLINK_DEBUG_READCOREID = 0x22
+    STLINK_DEBUG_APIV2_ENTER = 0x30
+    STLINK_DEBUG_APIV2_READ_IDCODES = 0x31
+    STLINK_DEBUG_APIV2_RESETSYS = 0x32
+    STLINK_DEBUG_APIV2_READREG = 0x33
+    STLINK_DEBUG_APIV2_WRITEREG = 0x34
+    STLINK_DEBUG_APIV2_WRITEDEBUGREG = 0x35
+    STLINK_DEBUG_APIV2_READDEBUGREG = 0x36
+    STLINK_DEBUG_APIV2_READALLREGS = 0x3a
+    STLINK_DEBUG_APIV2_GETLASTRWSTATUS = 0x3b
+    STLINK_DEBUG_APIV2_DRIVE_NRST = 0x3c
+    STLINK_DEBUG_SYNC = 0x3e
+    STLINK_DEBUG_APIV2_START_TRACE_RX = 0x40
+    STLINK_DEBUG_APIV2_STOP_TRACE_RX = 0x41
+    STLINK_DEBUG_APIV2_GET_TRACE_NB = 0x42
+    STLINK_DEBUG_APIV2_SWD_SET_FREQ = 0x43
+    STLINK_DEBUG_ENTER_SWD = 0xa3
 
-    STLINK_DEBUG_APIV2_DRIVE_NRST_LOW   = 0x00
-    STLINK_DEBUG_APIV2_DRIVE_NRST_HIGH  = 0x01
+    STLINK_DEBUG_APIV2_DRIVE_NRST_LOW = 0x00
+    STLINK_DEBUG_APIV2_DRIVE_NRST_HIGH = 0x01
     STLINK_DEBUG_APIV2_DRIVE_NRST_PULSE = 0x02
 
     STLINK_DEBUG_APIV2_SWD_SET_FREQ_MAP = {
@@ -78,6 +79,12 @@ class Stlink():
     STLINK_MAXIMUM_TRANSFER_SIZE = 1024
 
     def __init__(self, connector, dbg, swd_frequency=1800000):
+        # # in OS/X > 10.11 (Darwin kernel >= 15) is maybe a bug
+        # # and ST-Link freezes if reading more than 64 bytes at once
+        # import platform
+        # if platform.system() == 'Darwin':
+        #     if int(platform.release().split('.')[0]) >= 15:
+        #         Stlink.STLINK_MAXIMUM_TRANSFER_SIZE = 1024
         self._connector = connector
         self._dbg = dbg
         self.read_version()
@@ -88,8 +95,14 @@ class Stlink():
         self.enter_debug_swd()
         self.read_coreid()
 
+    def clean_exit(self):
+        # WORKAROUND for OS/X 10.11+
+        # ... read from ST-Link, must be performed even times
+        # call this function after last send command
+        if self._connector._xfer_counter & 1:
+            self._connector.xfer([Stlink.STLINK_GET_CURRENT_MODE], rx_len=2)
+
     def read_version(self):
-        rx = self._connector.xfer([Stlink.STLINK_GET_VERSION, 0x80], rx_len=6)
         rx = self._connector.xfer([Stlink.STLINK_GET_VERSION, 0x80], rx_len=6)
         dev_ver = self._connector.version
         ver = int.from_bytes(rx[:2], byteorder='big')
@@ -111,18 +124,23 @@ class Stlink():
     @property
     def ver_stlink(self):
         return self._ver_stlink
+
     @property
     def ver_jtag(self):
         return self._ver_jtag
+
     @property
     def ver_mass(self):
         return self._ver_mass
+
     @property
     def ver_swim(self):
         return self._ver_swim
+
     @property
     def ver_api(self):
         return self._ver_api
+
     @property
     def ver_str(self):
         return self._ver_str
@@ -154,7 +172,6 @@ class Stlink():
         if rx[0] == Stlink.STLINK_MODE_SWIM:
             self._connector.xfer([Stlink.STLINK_SWIM_COMMAND, Stlink.STLINK_SWIM_EXIT])
 
-
     def set_swd_freq(self, freq=1800000):
         for f, d in Stlink.STLINK_DEBUG_APIV2_SWD_SET_FREQ_MAP.items():
             if freq >= f:
@@ -165,10 +182,10 @@ class Stlink():
         raise lib.stlinkex.StlinkException("Selected SWD frequency is too low")
 
     def enter_debug_swd(self):
-        rx = self._connector.xfer([Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_APIV2_ENTER, Stlink.STLINK_DEBUG_ENTER_SWD], rx_len=2)
+        self._connector.xfer([Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_APIV2_ENTER, Stlink.STLINK_DEBUG_ENTER_SWD], rx_len=2)
 
     def debug_resetsys(self):
-        rx = self._connector.xfer([Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_APIV2_RESETSYS], rx_len=2)
+        self._connector.xfer([Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_APIV2_RESETSYS], rx_len=2)
 
     def set_debugreg32(self, addr, data):
         if addr % 4:
@@ -214,8 +231,8 @@ class Stlink():
             raise lib.stlinkex.StlinkException('get_mem32: Address must be in multiples of 4')
         if size % 4:
             raise lib.stlinkex.StlinkException('get_mem32: Size must be in multiples of 4')
-        if size > 1024:
-            raise lib.stlinkex.StlinkException('get_mem32: Size for reading is %d but maximum can be 1024' % size)
+        if size > Stlink.STLINK_MAXIMUM_TRANSFER_SIZE:
+            raise lib.stlinkex.StlinkException('get_mem32: Size for reading is %d but maximum can be %d' % (size, Stlink.STLINK_MAXIMUM_TRANSFER_SIZE))
         cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_READMEM_32BIT]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         cmd.extend(list(size.to_bytes(4, byteorder='little')))
@@ -226,8 +243,8 @@ class Stlink():
             raise lib.stlinkex.StlinkException('set_mem32: Address must be in multiples of 4')
         if len(data) % 4:
             raise lib.stlinkex.StlinkException('set_mem32: Size must be in multiples of 4')
-        if len(data) > 1024:
-            raise lib.stlinkex.StlinkException('set_mem32: Size for writing is %d but maximum can be 1024' % len(data))
+        if len(data) > Stlink.STLINK_MAXIMUM_TRANSFER_SIZE:
+            raise lib.stlinkex.StlinkException('set_mem32: Size for writing is %d but maximum can be %d' % (len(data), Stlink.STLINK_MAXIMUM_TRANSFER_SIZE))
         cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_WRITEMEM_32BIT]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         cmd.extend(list(len(data).to_bytes(4, byteorder='little')))

@@ -67,10 +67,17 @@ class Stm32():
             data = self._stlink.get_mem8(addr, read_size)
         while True:
             self._dbg.bargraph_update(value=len(data))
-            read_size = min((size - len(data) & 0xfffffffc), self._stlink.STLINK_MAXIMUM_TRANSFER_SIZE)
+            # WORKAROUND for OS/X 10.11+
+            # ... read from ST-Link more than 64 bytes, must be performed even times
+            read_size = min((size - len(data) & 0xfffffff8), self._stlink.STLINK_MAXIMUM_TRANSFER_SIZE * 2)
             if read_size == 0:
                 break
-            data.extend(self._stlink.get_mem32(addr + len(data), read_size))
+            if read_size > 64:
+                read_size //= 2
+                data.extend(self._stlink.get_mem32(addr + len(data), read_size))
+                data.extend(self._stlink.get_mem32(addr + len(data), read_size))
+            else:
+                data.extend(self._stlink.get_mem32(addr + len(data), read_size))
         if len(data) < size:
             read_size = size - len(data)
             data.extend(self._stlink.get_mem8(addr + len(data), read_size))
@@ -83,20 +90,29 @@ class Stm32():
             return
         if len(data) >= 16384:
             self._dbg.bargraph_start('Writing memory', value_max=len(data))
-        size = 0
+        written_size = 0
         if addr % 4:
             write_size = min(4 - (addr % 4), len(data))
             self._stlink.set_mem8(addr, data[:write_size])
-            size = write_size
+            written_size = write_size
         while True:
-            self._dbg.bargraph_update(value=size)
-            write_size = min((len(data) - size) & 0xfffffffc, self._stlink.STLINK_MAXIMUM_TRANSFER_SIZE)
+            self._dbg.bargraph_update(value=written_size)
+            # WORKAROUND for OS/X 10.11+
+            # ... write to ST-Link more than 64 bytes, must be performed even times
+            write_size = min((len(data) - written_size) & 0xfffffff8, self._stlink.STLINK_MAXIMUM_TRANSFER_SIZE * 2)
             if write_size == 0:
                 break
-            self._stlink.set_mem32(addr + size, data[size:size + write_size])
-            size += write_size
-        if size < len(data):
-            self._stlink.set_mem8(addr + size, data[size:])
+            if write_size > 64:
+                write_size //= 2
+                self._stlink.set_mem32(addr + written_size, data[written_size:written_size + write_size])
+                written_size += write_size
+                self._stlink.set_mem32(addr + written_size, data[written_size:written_size + write_size])
+                written_size += write_size
+            else:
+                self._stlink.set_mem32(addr + written_size, data[written_size:written_size + write_size])
+                written_size += write_size
+        if written_size < len(data):
+            self._stlink.set_mem8(addr + written_size, data[written_size:])
         self._dbg.bargraph_done()
         return
 
@@ -115,11 +131,20 @@ class Stm32():
             written_size = write_size
         while True:
             self._dbg.bargraph_update(value=written_size)
-            write_size = min((size - written_size) & 0xfffffffc, self._stlink.STLINK_MAXIMUM_TRANSFER_SIZE)
+            # WORKAROUND for OS/X 10.11+
+            # ... write to ST-Link more than 64 bytes, must be performed even timesg
+            write_size = min((size - written_size) & 0xfffffff8, self._stlink.STLINK_MAXIMUM_TRANSFER_SIZE * 2)
             if write_size == 0:
                 break
-            self._stlink.set_mem32(addr + written_size, [pattern] * write_size)
-            written_size += write_size
+            if write_size > 64:
+                write_size //= 2
+                self._stlink.set_mem32(addr + written_size, [pattern] * write_size)
+                written_size += write_size
+                self._stlink.set_mem32(addr + written_size, [pattern] * write_size)
+                written_size += write_size
+            else:
+                self._stlink.set_mem32(addr + written_size, [pattern] * write_size)
+                written_size += write_size
         if written_size < size:
             self._stlink.set_mem8(addr + written_size, [pattern] * (size - written_size))
         self._dbg.bargraph_done()

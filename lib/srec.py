@@ -33,7 +33,7 @@ class SrecExceptionWrongChecksum(Exception):
         return self.msg
 
 
-class Srec(object):
+class Srec():
     ADDR_SIZE = {
         'S0': 2,
         'S1': 2,

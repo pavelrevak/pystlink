@@ -8,29 +8,36 @@ import lib.stlinkex
 class MockDbg():
     def __init__(self):
         pass
+
     def debug(self, msg, level=2):
         pass
         # print(msg)
+
     def msg(self, msg, level=1):
         pass
         # print(msg)
+
     def verbose(self, msg, level=1):
         pass
         # print(msg)
+
     def bargraph_start(self, msg, value_min=0, value_max=100, level=1):
         pass
+
     def bargraph_update(self, value=0, percent=None):
         pass
+
     def bargraph_done(self):
         pass
+
     def set_verbose(self, verbose):
         pass
 
 
 class TestStm32(unittest.TestCase):
     def setUp(self):
-        dbg = MockDbg()
-        self._pystlink = pystlink.PyStlink(dbg)
+        self._pystlink = pystlink.PyStlink()
+        self._pystlink._dbg = MockDbg()
         # self._driver = lib.stm32.Stm32(stlink=None, dbg=dbg)
 
     # def test_read_version(self):
@@ -57,6 +64,7 @@ class TestStm32(unittest.TestCase):
             {'part_no': 0xc20, 'core': 'CortexM0'},
             {'part_no': 0xc24, 'core': 'CortexM4'},
         ]
+
         class MockStlink():
             def get_debugreg32(self, reg):
                 assert reg == 0xe000ed00
@@ -70,6 +78,7 @@ class TestStm32(unittest.TestCase):
             {'part_no': 0xc20, 'core': 'CortexM0'},
             {'part_no': 0xc24, 'core': 'CortexM4'},
         ]
+
         class MockStlink():
             def get_debugreg32(self, reg):
                 assert reg == 0xe000ed00
@@ -83,6 +92,7 @@ class TestStm32(unittest.TestCase):
             {'part_no': 0xc20, 'core': 'CortexM0'},
             {'part_no': 0xc24, 'core': 'CortexM4'},
         ]
+
         class MockStlink():
             def get_debugreg32(self, reg):
                 assert reg == 0xe000ed00
@@ -99,6 +109,7 @@ class TestStm32(unittest.TestCase):
                 {'dev_id': 0x415},
             ]
         }
+
         class MockStlink():
             def get_debugreg32(self, reg):
                 assert reg == 0xE0042000
@@ -115,6 +126,7 @@ class TestStm32(unittest.TestCase):
                 {'dev_id': 0x415},
             ]
         }
+
         class MockStlink():
             def get_debugreg32(self, reg):
                 assert reg == 0xE0042000
@@ -131,6 +143,7 @@ class TestStm32(unittest.TestCase):
                 {'dev_id': 0x415},
             ]
         }
+
         class MockStlink():
             def get_debugreg32(self, reg):
                 assert reg == 0xE0042000
@@ -151,6 +164,7 @@ class TestStm32(unittest.TestCase):
                 {'flash_size':  256},
             ]
         }
+
         class MockStlink():
             def get_debugreg16(self, reg):
                 assert reg == 0x1fff7a22
@@ -173,6 +187,7 @@ class TestStm32(unittest.TestCase):
                 {'flash_size':  256},
             ]
         }
+
         class MockStlink():
             def get_debugreg16(self, reg):
                 assert reg == 0x1fff7a22
@@ -195,6 +210,7 @@ class TestStm32(unittest.TestCase):
                 {'flash_size':  256},
             ]
         }
+
         class MockStlink():
             def get_debugreg16(self, reg):
                 assert reg == 0x1fff7a22
@@ -203,48 +219,51 @@ class TestStm32(unittest.TestCase):
         with self.assertRaises(lib.stlinkex.StlinkException):
             self._pystlink.find_mcus_by_flash_size()
 
-    def test_find_mcus_by_mcu_type_two(self):
+    def test_filter_detected_cpu_two(self):
         self._pystlink._mcus = [
             {'type': 'STM32F030x8'},
             {'type': 'STM32F031x8'},
             {'type': 'STM32F051x8'},
         ]
-        mcus = self._pystlink.find_mcus_by_mcu_type('STM32F03')
-        self.assertEqual(len(mcus), 2)
-        self.assertEqual(mcus, [
+        self._pystlink.filter_detected_cpu(['STM32F03'])
+        self.assertEqual(len(self._pystlink._mcus), 2)
+        self.assertEqual(self._pystlink._mcus, [
             {'type': 'STM32F030x8'},
             {'type': 'STM32F031x8'},
         ])
 
-    def test_find_mcus_by_mcu_type_one(self):
+    def test_filter_detected_cpu_one(self):
         self._pystlink._mcus = [
             {'type': 'STM32F030x8'},
             {'type': 'STM32F031x8'},
             {'type': 'STM32F051x8'},
         ]
-        mcus = self._pystlink.find_mcus_by_mcu_type('STM32F051R8')
-        self.assertEqual(len(mcus), 1)
-        self.assertEqual(mcus, [
+        self._pystlink.filter_detected_cpu(['STM32F051R8'])
+        self.assertEqual(len(self._pystlink._mcus), 1)
+        self.assertEqual(self._pystlink._mcus, [
             {'type': 'STM32F051x8'},
         ])
 
-    def test_find_mcus_by_mcu_type_fail(self):
+    def test_filter_detected_cpu_fail(self):
         self._pystlink._mcus = [
             {'type': 'STM32F030x8'},
             {'type': 'STM32F031x8'},
             {'type': 'STM32F051x8'},
         ]
         with self.assertRaises(lib.stlinkex.StlinkException):
-            self._pystlink.find_mcus_by_mcu_type('STM32F103')
+            self._pystlink.filter_detected_cpu(['STM32F103'])
+
 
 class TestStm32_get_mem(unittest.TestCase):
     def setUp(self):
         class MockStlink():
             STLINK_MAXIMUM_TRANSFER_SIZE = 1024
+
             def __init__(self, test):
                 self._test = test
                 self._pointer = None
                 self._index = 0
+
             def get_mem32(self, addr, size):
                 self._test.assertNotEqual(size, 0)
                 self._test.assertEqual(addr % 4, 0)
@@ -257,6 +276,7 @@ class TestStm32_get_mem(unittest.TestCase):
                 old_index = self._index
                 self._index += size
                 return [i & 0xff for i in range(old_index, self._index)]
+
             def get_mem8(self, addr, size):
                 self._test.assertNotEqual(size, 0)
                 if self._pointer is None:
@@ -267,6 +287,7 @@ class TestStm32_get_mem(unittest.TestCase):
                 old_index = self._index
                 self._index += size
                 return [i & 0xff for i in range(old_index, self._index)]
+
         self._driver = lib.stm32.Stm32(stlink=MockStlink(self), dbg=MockDbg())
 
     def _test_get_mem(self, addr, size):
@@ -372,10 +393,12 @@ class TestStm32_set_mem(unittest.TestCase):
     def setUp(self):
         class MockStlink():
             STLINK_MAXIMUM_TRANSFER_SIZE = 1024
+
             def __init__(self, test):
                 self._test = test
                 self._pointer = None
                 self._index = 0
+
             def set_mem32(self, addr, data):
                 self._test.assertNotEqual(len(data), 0)
                 self._test.assertEqual(addr % 4, 0)
@@ -386,6 +409,7 @@ class TestStm32_set_mem(unittest.TestCase):
                 self._test.assertEqual(addr, self._pointer)
                 self._pointer += len(data)
                 self._index += len(data)
+
             def set_mem8(self, addr, data):
                 self._test.assertNotEqual(len(data), 0)
                 if self._pointer is None:
@@ -394,6 +418,7 @@ class TestStm32_set_mem(unittest.TestCase):
                 self._test.assertEqual(addr, self._pointer)
                 self._pointer += len(data)
                 self._index += len(data)
+
         self._driver = lib.stm32.Stm32(stlink=MockStlink(self), dbg=MockDbg())
 
     def _test_set_mem(self, addr, size):
@@ -497,10 +522,12 @@ class TestStm32_fill_mem(unittest.TestCase):
     def setUp(self):
         class MockStlink():
             STLINK_MAXIMUM_TRANSFER_SIZE = 1024
+
             def __init__(self, test):
                 self._test = test
                 self._pointer = None
                 self._index = 0
+
             def set_mem32(self, addr, data):
                 self._test.assertNotEqual(len(data), 0)
                 self._test.assertEqual(addr % 4, 0)
@@ -511,6 +538,7 @@ class TestStm32_fill_mem(unittest.TestCase):
                 self._test.assertEqual(addr, self._pointer)
                 self._pointer += len(data)
                 self._index += len(data)
+
             def set_mem8(self, addr, data):
                 self._test.assertNotEqual(len(data), 0)
                 if self._pointer is None:
@@ -519,6 +547,7 @@ class TestStm32_fill_mem(unittest.TestCase):
                 self._test.assertEqual(addr, self._pointer)
                 self._pointer += len(data)
                 self._index += len(data)
+
         self._driver = lib.stm32.Stm32(stlink=MockStlink(self), dbg=MockDbg())
 
     def _test_fill_mem(self, addr, size):

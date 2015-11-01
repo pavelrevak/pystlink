@@ -31,22 +31,22 @@ class Flash():
     # R5: FLASH_SR_BUSY_BIT
     # R6: FLASH_SR_EOP_BIT
     FLASH_WRITER_F0_CODE = [
-                    # write:
-        0x03, 0x88, # 0x8803    # ldrh r3, [r0]
-        0x0b, 0x80, # 0x800b    # strh r3, [r1]
-                    # test_busy:
-        0x23, 0x68, # 0x6823    # ldr r3, [r4]
-        0x2b, 0x42, # 0x422b    # tst r3, r5
-        0xfc, 0xd1, # 0xd1fc    # bne <test_busy>
-        0x33, 0x42, # 0x4233    # tst r3, r6
-        0x04, 0xd0, # 0xd104    # beq <exit>
-        0x02, 0x30, # 0x3002    # adds r0, #2
-        0x02, 0x31, # 0x3102    # adds r1, #2
-        0x02, 0x3a, # 0x3a02    # subs r2, #2
-        0x00, 0x2a, # 0x2a00    # cmp r2, #0
-        0xf3, 0xd1, # 0xd1f3    # bne <write>
-                    # exit:
-        0x00, 0xbe, # 0xbe00    # bkpt 0x00
+        # write:
+        0x03, 0x88,  # 0x8803    # ldrh r3, [r0]
+        0x0b, 0x80,  # 0x800b    # strh r3, [r1]
+        # test_busy:
+        0x23, 0x68,  # 0x6823    # ldr r3, [r4]
+        0x2b, 0x42,  # 0x422b    # tst r3, r5
+        0xfc, 0xd1,  # 0xd1fc    # bne <test_busy>
+        0x33, 0x42,  # 0x4233    # tst r3, r6
+        0x04, 0xd0,  # 0xd104    # beq <exit>
+        0x02, 0x30,  # 0x3002    # adds r0, #2
+        0x02, 0x31,  # 0x3102    # adds r1, #2
+        0x02, 0x3a,  # 0x3a02    # subs r2, #2
+        0x00, 0x2a,  # 0x2a00    # cmp r2, #0
+        0xf3, 0xd1,  # 0xd1f3    # bne <write>
+        # exit:
+        0x00, 0xbe,  # 0xbe00    # bkpt 0x00
     ]
 
     def __init__(self, driver, stlink, dbg, bank=0):
@@ -54,12 +54,11 @@ class Flash():
         self._stlink = stlink
         self._dbg = dbg
         self._stlink.read_target_voltage()
-        if bank > 0:
-            reg_bank = Flash.FLASH_REG_BASE + Flash.FLASH_REG_BASE_STEP * bank
-            Flash.FLASH_KEYR_REG = reg_bank + Flash.FLASH_KEYR_INDEX
-            Flash.FLASH_SR_REG = reg_bank + Flash.FLASH_SR_INDEX
-            Flash.FLASH_CR_REG = reg_bank + Flash.FLASH_CR_INDEX
-            Flash.FLASH_AR_REG = reg_bank + Flash.FLASH_AR_INDEX
+        reg_bank = Flash.FLASH_REG_BASE + Flash.FLASH_REG_BASE_STEP * bank
+        Flash.FLASH_KEYR_REG = reg_bank + Flash.FLASH_KEYR_INDEX
+        Flash.FLASH_SR_REG = reg_bank + Flash.FLASH_SR_INDEX
+        Flash.FLASH_CR_REG = reg_bank + Flash.FLASH_CR_INDEX
+        Flash.FLASH_AR_REG = reg_bank + Flash.FLASH_AR_INDEX
         if self._stlink.target_voltage < 2.0:
             raise lib.stlinkex.StlinkException('Supply voltage is %.2fV, but minimum for FLASH program or erase is 2.0V' % self._stlink.target_voltage)
         self.unlock()
@@ -195,8 +194,8 @@ class Stm32FP(lib.stm32.Stm32):
         self._dbg.debug('Stm32FP.flash_write(%s, [data:%dBytes], erase=%s, verify=%s, erase_sizes=%s)' % (('0x%08x' % addr) if addr is not None else 'None', len(data), erase, verify, erase_sizes))
         if addr is None:
             addr = self.FLASH_START
-        if addr % 2:
-            raise lib.stlinkex.StlinkException('Address is not alligned')
+        elif addr % 2:
+            raise lib.stlinkex.StlinkException('Start address is not aligned to half-word')
         self._flash_write(addr, data, erase=erase, verify=verify, erase_sizes=erase_sizes)
 
 
@@ -214,8 +213,8 @@ class Stm32FPXL(Stm32FP):
         self._dbg.debug('Stm32F1.flash_write(%s, [data:%dBytes], erase=%s, verify=%s, erase_sizes=%s)' % (('0x%08x' % addr) if addr is not None else 'None', len(data), erase, verify, erase_sizes))
         if addr is None:
             addr = self.FLASH_START
-        if addr % 2:
-            raise lib.stlinkex.StlinkException('Address is not alligned')
+        elif addr % 2:
+            raise lib.stlinkex.StlinkException('Start address is not aligned to half-word')
         if (addr - self.FLASH_START) + len(data) <= Stm32FPXL.BANK_SIZE:
             self._flash_write(addr, data, erase=erase, verify=verify, erase_sizes=erase_sizes, bank=0)
         elif (addr - self.FLASH_START) > Stm32FPXL.BANK_SIZE:

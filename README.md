@@ -4,11 +4,11 @@ Python tool for manipulating with STM32 MCUs using **ST-Link** in-system program
 
 ## Goal
 
-Goal of this project is to bring more flexible support for different MCUs, very simple command line interface, easier integration into Makefile for direct flashing or uploading program into SRAM and many more. Also any suggestions are welcome.
+Goal of this project is to bring more flexible support for different MCUs, very simple command line interface, easier integration into Makefile for direct flashing or uploading program into SRAM and many more, simplest way to add support for new MCUs. Also any suggestions are welcome.
 
 ## Features
 
-- running on **Linux**, **Mac OS/X** and **Windows**
+- running on **Linux**, **Mac OS/X** (also on OS/X 10.11+) and **Windows**
 - simple command line interface
 - detect MCU
 - dump registers and memory
@@ -21,6 +21,7 @@ Goal of this project is to bring more flexible support for different MCUs, very 
 
 ### Planed features
 
+- support for new unlisted MCUs (STM32F46x, STM32F47x, ..)
 - FLASH support for other MCU types (STM32L)
 - FLASH information block (system memory, option bytes and OTP area)
 - connecting under RESET
@@ -49,24 +50,29 @@ Goal of this project is to bring more flexible support for different MCUs, very 
 
 ## Help
 ```
-usage:
-  pystlink.py [options] [commands ...]
+usage: pystlink [-h] [-q | -i | -v | -d] [-V] [-c CPU] [-n]
+                [action [action ...]]
 
-options:
-  -h --help          show this help
-  -V --version       show version
-  -n --norun         don't run core when disconnecting from ST-Link (when program end)
-  -c --cpu {cputype} set expected cputype, eg: STM32F051R8 or STM32L4
+pystlink v0.0.0 (ST-LinkV2)
+(c)2015 by pavel.revak@gmail.com
+https://github.com/pavelrevak/pystlink
 
-verbose:
-  all verbose modes can also use between any commands (to set verbosity of any commands)
-  -q --quiet         set quiet
-  -i --info          set info (default)
-  -v --verbose       set verbose
-  -d --debug         set debug
+optional arguments:
+  -h, --help         show this help message and exit
+  -V, --version      show program's version number and exit
+  -c CPU, --cpu CPU  set expected CPU type [eg: STM32F051, STM32L4]
+  -n, --norun        do not run core when program end (if core was halted)
 
-commands:
-  (address and size can be in different numeric formats, like: 123, 0x1ac, 0o137, 0b1011)
+set verbosity level:
+  -q, --quiet
+  -i, --info         default
+  -v, --verbose
+  -d, --debug
+
+actions:
+  action             actions will be processed sequentially
+
+list of available actions:
   dump:core              print all core registers (halt core)
   dump:{reg}             print core register (halt core)
   dump:{addr}:{size}     print content of memory
@@ -79,9 +85,9 @@ commands:
   write:{reg}:{data}     write register (halt core)
   write:{addr}:{data}    write 32 bit memory register
 
-  download:{addr}:{size}:{file}      download memory with size into file
-  download:sram[:{size}]:{file}      download SRAM into file
-  download:flash[:{size}]:{file}     download FLASH into file
+  read:{addr}:{size}:{file}      read memory with size into file
+  read:sram[:{size}]:{file}      read SRAM into file
+  read:flash[:{size}]:{file}     read FLASH into file
 
   fill:{addr}:{size}:{pattern}   fill memory with a pattern
   fill:sram[:{size}]:{pattern}   fill SRAM memory with a pattern
@@ -102,21 +108,22 @@ commands:
 
   sleep:{seconds}        sleep (float) - insert delay between commands
 
+  (numerical values can be in different formats, like: 42, 0x2a, 0o52, 0b101010)
+
 examples:
   pystlink.py --help
   pystlink.py -v --cpu STM32F051R8
   pystlink.py -q --cpu STM32F03 dump:flash dump:sram
   pystlink.py dump:0x08000000:256
   pystlink.py write:0x48000018:0x00000100 dump:0x48000014
-  pystlink.py download:sram:256:aaa.bin download:flash:bbb.bin
+  pystlink.py read:sram:256:aaa.bin read:flash:bbb.bin
   pystlink.py -n reset:halt write:pc:0x20000010 dump:pc core:step dump:all
   pystlink.py flash:erase:verify:app.bin
-  pystlink.py flash:erase flash:verify:0x08010000:boot.bin
-```
+  pystlink.py flash:erase flash:verify:0x08010000:boot.bin```
 
 ## Supported MCUs
 
-Currently all **ST32F** and **ST32L** [MCU](http://www.st.com/web/en/catalog/mmc/FM141/SC1169).
+Currently almost all **ST32F** and **ST32L** [MCU](http://www.st.com/web/en/catalog/mmc/FM141/SC1169).
 
 FLASHing support is for all **STM32F**.
 
