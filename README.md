@@ -26,6 +26,7 @@ Goal of this project is to bring more flexible support for different MCUs, very 
 - FLASH information block (system memory, option bytes and OTP area)
 - connecting under RESET
 - stop Watchdog in debug mode to prevent device restart
+- allow to control breakpoints or watchpoints
 - support for more ST-Link devices connected at once
 - other file formats (SREC, HEX, ELF, ...)
 - pip installer
@@ -120,6 +121,20 @@ examples:
   pystlink.py -n reset:halt write:pc:0x20000010 dump:pc core:step dump:all
   pystlink.py flash:erase:verify:app.bin
   pystlink.py flash:erase flash:verify:0x08010000:boot.bin```
+
+## Supported programmers
+
+From ST exists actually three different SWD programmers:
+
+- ST-Link/V1 - support is not planned
+- ST-Link/V2 - actually full support on all platforms
+- ST-Link/V2-1 - actually full support except OS/X 10.11 (fix in work)
+
+### Mac OS/X 10.11
+
+Latest OS/X from Apple brings lot of problems around USB, especially with ST-Link devices.
+The problem appear if pystlink (or any other programmer for ST-Link like openocd, stlink, ..) is started second time then connection to st-link ends with timeouts.
+**pystlink** has currently implemented some basic workarounds, which allow work without problems, but actually only for ST-Link/V2 programmer.
 
 ## Supported MCUs
 

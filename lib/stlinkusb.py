@@ -26,13 +26,14 @@ class StlinkUsbConnector():
         self._dbg = dbg
         self._dev_type = None
         self._xfer_counter = 0
-        for dev_type in StlinkUsbConnector.DEV_TYPES:
-            self._dbg.debug("Connecting to ST-Link/%s %04x:%04x" % (dev_type['version'], dev_type['idVendor'], dev_type['idProduct']))
-            self._dev = usb.core.find(idVendor=dev_type['idVendor'], idProduct=dev_type['idProduct'])
-            if self._dev:
-                self._dev_type = dev_type
-                self._dbg.verbose("Successfully connected to ST-Link/V2")
-                return
+        devices = usb.core.find(find_all=True)
+        for dev in devices:
+            for dev_type in StlinkUsbConnector.DEV_TYPES:
+                if dev.idVendor == dev_type['idVendor'] and dev.idProduct == dev_type['idProduct']:
+                    self._dev = dev
+                    self._dev_type = dev_type
+                    self._dbg.verbose("Successfully connected to ST-Link/%s" % dev_type['version'])
+                    return
         raise lib.stlinkex.StlinkException('ST-Link/V2 is not connected')
 
     @property

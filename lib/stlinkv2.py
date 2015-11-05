@@ -79,12 +79,6 @@ class Stlink():
     STLINK_MAXIMUM_TRANSFER_SIZE = 1024
 
     def __init__(self, connector, dbg, swd_frequency=1800000):
-        # # in OS/X > 10.11 (Darwin kernel >= 15) is maybe a bug
-        # # and ST-Link freezes if reading more than 64 bytes at once
-        # import platform
-        # if platform.system() == 'Darwin':
-        #     if int(platform.release().split('.')[0]) >= 15:
-        #         Stlink.STLINK_MAXIMUM_TRANSFER_SIZE = 1024
         self._connector = connector
         self._dbg = dbg
         self.read_version()
