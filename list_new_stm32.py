@@ -30,19 +30,14 @@ unsupported_mcus = {}
 
 for mcu in mcus:
     m = fix_cpu_type(mcu.get('XJE010^VT-007!0'))
-    if m in supported_mcus:
-        continue
-    c = {
-        'core': mcu.get('STP00920^VT-007!0'),
-        'freq': mcu.get('XJG535^VT-007!45'),
-        'flash_size': mcu.get('STP279^VT-007!24'),
-        'sram_size': mcu.get('XJG510^VT-007!0'),
-        'eeprom_size': mcu.get('STP681^VT-003!0'),
-    }
-    unsupported_mcus[m] = c
-
-# for k, v in unsupported_mcus[0].items():
-#     print(k, v)
+    if m not in supported_mcus:
+        unsupported_mcus[m] = {
+            'core': mcu.get('STP00920^VT-007!0'),
+            'freq': mcu.get('XJG535^VT-007!45'),
+            'flash_size': mcu.get('STP279^VT-007!24'),
+            'sram_size': mcu.get('XJG510^VT-007!0'),
+            'eeprom_size': mcu.get('STP681^VT-003!0'),
+        }
 
 print("On ST.com is %d new STM32 MCUs which is not supported by pystlink" % len(unsupported_mcus))
 print("%-15s %-15s %6s %6s %6s %6s" % ('type', 'core', 'flash', 'sram', 'eeprom', 'freq'))
