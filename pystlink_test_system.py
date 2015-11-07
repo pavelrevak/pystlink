@@ -120,9 +120,9 @@ class TestStm32(Stlink):
         self.assertEqual(ret['output'], [])
 
     def testNorun(self):
-        ret = self._pystlink(['--norun'])
+        ret = self._pystlink(['--no-run'])
         self.assertEqual(ret['errors'], [])
-        self.assertEqual(ret['warnings'], ['CPU remain in debug mode'])
+        self.assertEqual(ret['warnings'], ['CPU may stay in halt mode'])
         self.assertEqual(ret['output'], [])
 
     def testDumpRegAll(self):

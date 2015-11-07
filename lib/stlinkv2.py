@@ -93,13 +93,16 @@ class Stlink():
         # WORKAROUND for OS/X 10.11+
         # ... read from ST-Link, must be performed even times
         # call this function after last send command
-        if self._connector._xfer_counter & 1:
+        if self._connector.xfer_counter & 1:
             self._connector.xfer([Stlink.STLINK_GET_CURRENT_MODE], rx_len=2)
 
     def read_version(self):
-        rx = self._connector.xfer([Stlink.STLINK_GET_VERSION, 0x80], rx_len=6)
-        dev_ver = self._connector.version
+        # WORKAROUNF for OS/X 10.11+
+        # ... retry XFER if first is timeout.
+        # only during this command it is necessary
+        rx = self._connector.xfer([Stlink.STLINK_GET_VERSION, 0x80], rx_len=6, retry=1, tout=100)
         ver = int.from_bytes(rx[:2], byteorder='big')
+        dev_ver = self._connector.version
         self._ver_stlink = (ver >> 12) & 0xf
         self._ver_jtag = (ver >> 6) & 0x3f
         self._ver_swim = ver & 0x3f if dev_ver == 'V2' else None
@@ -112,7 +115,7 @@ class Stlink():
             self._ver_str += "M%d" % self._ver_mass
         if self.ver_api == 1:
             raise self._dbg.warning("ST-Link/%s is not supported, please upgrade firmware." % self._ver_str)
-        if self.ver_jtag < 23:
+        if self.ver_jtag < 21:
             self._dbg.warning("ST-Link/%s is not recent firmware, please upgrade first - functionality is not guaranteed." % self._ver_str)
 
     @property

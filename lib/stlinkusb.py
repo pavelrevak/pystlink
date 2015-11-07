@@ -44,35 +44,69 @@ class StlinkUsbConnector():
     def xfer_counter(self):
         return self._xfer_counter
 
-    def _write(self, data):
+    def _write(self, data, tout=200):
         self._dbg.debug("  USB > %s" % ' '.join(['%02x' % i for i in data]))
         self._xfer_counter += 1
-        count = self._dev.write(self._dev_type['outPipe'], data, 1000)
+        count = self._dev.write(self._dev_type['outPipe'], data, tout)
         if count != len(data):
             raise lib.stlinkex.StlinkException("Error, only %d Bytes was transmitted to ST-Link instead of expected %d" % (count, len(data)))
 
-    def _read(self, size):
+    def _read(self, size, tout=200):
         read_size = size
         if read_size < 64:
             read_size = 64
         elif read_size % 4:
             read_size += 3
             read_size &= 0xffc
-        data = self._dev.read(self._dev_type['inPipe'], read_size, 1000).tolist()
+        data = self._dev.read(self._dev_type['inPipe'], read_size, tout).tolist()
         self._dbg.debug("  USB < %s" % ' '.join(['%02x' % i for i in data]))
         return data[:size]
 
-    def xfer(self, cmd, data=None, rx_len=None):
-        try:
-            if len(cmd) > self.STLINK_CMD_SIZE_V2:
-                raise lib.stlinkex.StlinkException("Error too many Bytes in command: %d, maximum is %d" % (len(cmd), self.STLINK_CMD_SIZE_V2))
-            # pad to 16 bytes
-            cmd += [0] * (self.STLINK_CMD_SIZE_V2 - len(cmd))
-            self._write(cmd)
-            if data:
-                self._write(data)
-            if rx_len:
-                return self._read(rx_len)
-        except usb.core.USBError as e:
-            raise lib.stlinkex.StlinkException("USB Error: %s" % e)
-        return None
+    def xfer(self, cmd, data=None, rx_len=None, retry=0, tout=200):
+        while (True):
+            try:
+                if len(cmd) > self.STLINK_CMD_SIZE_V2:
+                    raise lib.stlinkex.StlinkException("Error too many Bytes in command: %d, maximum is %d" % (len(cmd), self.STLINK_CMD_SIZE_V2))
+                # pad to 16 bytes
+                cmd += [0] * (self.STLINK_CMD_SIZE_V2 - len(cmd))
+                self._write(cmd, tout)
+                if data:
+                    self._write(data, tout)
+                if rx_len:
+                    return self._read(rx_len)
+            except usb.core.USBError as e:
+                if retry:
+                    retry -= 1
+                    continue
+                raise lib.stlinkex.StlinkException("USB Error: %s" % e)
+            return None
+
+    def unmount_discovery(self):
+        import platform
+        if platform.system() != 'Darwin' or self.version != 'V2-1':
+            return
+        import subprocess
+        p = subprocess.Popen(
+            ['diskutil', 'info', 'DISCOVERY'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        p.wait()
+        out, err = p.communicate()
+        out = out.decode(encoding='UTF-8').strip()
+        is_mounted = False
+        is_mbed = False
+        for line in out.splitlines():
+            param = line.split(':', 1)
+            if param[0].strip() == 'Mounted' and param[1].strip() == 'Yes':
+                is_mounted = True
+            if param[0].strip() == 'Device / Media Name' and param[1].strip().startswith('MBED'):
+                is_mbed = True
+        if is_mounted and is_mbed:
+            print("unmounting DISCOVERY")
+            p = subprocess.Popen(
+                ['diskutil', 'unmount', 'DISCOVERY'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            p.wait()

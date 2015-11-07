@@ -127,14 +127,16 @@ examples:
 From ST exists actually three different SWD programmers:
 
 - ST-Link/V1 - support is not planned
-- ST-Link/V2 - actually full support on all platforms
-- ST-Link/V2-1 - actually full support except OS/X 10.11 (fix in work)
+- **ST-Link/V2** - actually full support on all platforms
+- **ST-Link/V2-1** - actually full support on all platforms
+
+Minimum recommended firmware version of ST-Link is **V2J21xx** or newer. Otherwise is recommended upgrade using [ST-LINK/V2 firmware upgrade](http://www.st.com/web/en/catalog/tools/PF258194) tool.
 
 ### Mac OS/X 10.11
 
 Latest OS/X from Apple brings lot of problems around USB, especially with ST-Link devices.
 The problem appear if pystlink (or any other programmer for ST-Link like openocd, stlink, ..) is started second time then connection to st-link ends with timeouts.
-**pystlink** has currently implemented some basic workarounds, which allow work without problems, but actually only for ST-Link/V2 programmer.
+**Pystlink** has currently implemented some basic workarounds, to correctly run on **OS/X 10.11.x**. If you get some problems, please report it.
 
 ## Supported MCUs
 

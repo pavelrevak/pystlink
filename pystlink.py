@@ -81,6 +81,8 @@ class PyStlink():
 
     def find_mcus_by_core(self):
         cpuid = self._stlink.get_debugreg32(PyStlink.CPUID_REG)
+        if cpuid == 0:
+            raise lib.stlinkex.StlinkException('Not connected to CPU')
         self._dbg.verbose("CPUID:  %08x" % cpuid)
         partno = 0xfff & (cpuid >> 4)
         for mcu_core in lib.stm32devices.DEVICES:
@@ -168,8 +170,10 @@ class PyStlink():
         else:
             self._driver = lib.stm32.Stm32(self._stlink, dbg=self._dbg)
 
-    def detect_cpu(self, expected_cpus):
+    def detect_cpu(self, expected_cpus, unmount=False):
         self._connector = lib.stlinkusb.StlinkUsbConnector(dbg=self._dbg)
+        if unmount:
+            self._connector.unmount_discovery()
         self._stlink = lib.stlinkv2.Stlink(self._connector, dbg=self._dbg)
         self._dbg.info("DEVICE: ST-Link/%s" % self._stlink.ver_str)
         self._dbg.info("SUPPLY: %.2fV" % self._stlink.target_voltage)
@@ -181,7 +185,7 @@ class PyStlink():
         self.find_mcus_by_devid()
         self.find_mcus_by_flash_size()
         if expected_cpus:
-            # filter found MCUs by selected MCU type
+            # filter detected MCUs by selected MCU type
             self.filter_detected_cpu(expected_cpus)
         self._dbg.info("MCU:    %s" % '/'.join([mcu['type'] for mcu in self._mcus]))
         self._dbg.info("FLASH:  %dKB" % self._flash_size)
@@ -406,14 +410,15 @@ class PyStlink():
         group_verbose.add_argument('-d', '--debug', action='store_const', dest='verbosity', const=3)
         parser.add_argument('-V', '--version', action='version', version=VERSION_STR)
         parser.add_argument('-c', '--cpu', action='append', help='set expected CPU type [eg: STM32F051, STM32L4]')
-        parser.add_argument('-n', '--norun', action='store_true', help='do not run core when program end (if core was halted)')
+        parser.add_argument('-r', '--no-run', action='store_true', help='do not run core when program end (if core was halted)')
+        parser.add_argument('-u', '--no-unmount', action='store_true', help='do not unmount DISCOVERY from ST-Link/V2-1 on OS/X platform')
         group_actions = parser.add_argument_group(title='actions')
         group_actions.add_argument('action', nargs='*', help='actions will be processed sequentially')
         args = parser.parse_args()
         self._dbg = lib.dbg.Dbg(args.verbosity)
         runtime_status = 0
         try:
-            self.detect_cpu(args.cpu)
+            self.detect_cpu(args.cpu, not args.no_unmount)
             if args.action and self._driver is None:
                 raise lib.stlinkex.StlinkExceptionCpuNotSelected()
             for action in args.action:
@@ -434,10 +439,10 @@ class PyStlink():
         if self._stlink:
             try:
                 if self._driver:
-                    if args.norun:
-                        self._dbg.warning('CPU remain in debug mode', level=1)
-                    else:
+                    if not args.no_run:
                         self._driver.core_nodebug()
+                    else:
+                        self._dbg.warning('CPU may stay in halt mode', level=1)
                 self._stlink.leave_state()
                 self._stlink.clean_exit()
             except lib.stlinkex.StlinkException as e:
