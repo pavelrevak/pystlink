@@ -401,6 +401,8 @@ DEVICES = [
                 'flash_driver': None,
                 'erase_sizes': None,
                 'devices': [
+                    {'type': 'STM32L476xC', 'flash_size':  256, 'sram_size': 128, 'eeprom_size':  0, 'freq':  80},
+                    {'type': 'STM32L476xE', 'flash_size':  512, 'sram_size': 128, 'eeprom_size':  0, 'freq':  80},
                     {'type': 'STM32L476xG', 'flash_size': 1024, 'sram_size': 128, 'eeprom_size':  0, 'freq':  80},
                     {'type': 'STM32L486xG', 'flash_size': 1024, 'sram_size': 128, 'eeprom_size':  0, 'freq':  80},
                 ],
