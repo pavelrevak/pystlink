@@ -121,6 +121,7 @@ examples:
   pystlink.py -n reset:halt write:pc:0x20000010 dump:pc core:step dump:all
   pystlink.py flash:erase:verify:app.bin
   pystlink.py flash:erase flash:verify:0x08010000:boot.bin```
+````
 
 ## Supported programmers
 
