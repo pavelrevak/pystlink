@@ -20,27 +20,59 @@ res = urllib.request.urlopen('http://www.st.com/stonline/stappl/productcatalog/j
 raw_json = json.loads(res.read().decode('utf-8'))
 mcus = [record for record in raw_json['records']]
 
-supported_mcus = []
+supported_mcus = {}
 for devs in lib.stm32devices.DEVICES:
     for dev in devs['devices']:
         for d in dev['devices']:
-            supported_mcus.append(d['type'])
+            supported_mcus[d['type']] = d
 
 unsupported_mcus = {}
+wrong_param_mcus = {}
 
 for mcu in mcus:
     m = fix_cpu_type(mcu.get('XJE010^VT-007!0'))
-    if m not in supported_mcus:
+    core = mcu.get('STP00920^VT-007!0')
+    freq = int(mcu.get('XJG535^VT-007!45'))
+    flash = int(mcu.get('STP279^VT-007!24'))
+    sram = int(mcu.get('XJG510^VT-007!0'))
+    eeprom = mcu.get('STP681^VT-003!0')
+    eeprom = 0 if eeprom == '-' else int(eeprom) // 1024
+    if m in supported_mcus:
+        smcu = supported_mcus[m]
+        ok = True
+        if smcu['freq'] != freq:
+            ok = False
+        if smcu['flash_size'] != flash:
+            ok = False
+        if smcu['sram_size'] != sram:
+            ok = False
+        if smcu['eeprom_size'] != eeprom:
+            ok = False
+        if not ok:
+            wrong_param_mcus[m] = {
+                'core': core,
+                'freq': freq,
+                'flash_size': flash,
+                'sram_size': sram,
+                'eeprom_size': eeprom,
+            }
+    else:
         unsupported_mcus[m] = {
-            'core': mcu.get('STP00920^VT-007!0'),
-            'freq': mcu.get('XJG535^VT-007!45'),
-            'flash_size': mcu.get('STP279^VT-007!24'),
-            'sram_size': mcu.get('XJG510^VT-007!0'),
-            'eeprom_size': mcu.get('STP681^VT-003!0'),
+            'core': core,
+            'freq': freq,
+            'flash_size': flash,
+            'sram_size': sram,
+            'eeprom_size': eeprom,
         }
 
-print("On ST.com is %d new STM32 MCUs which is not supported by pystlink" % len(unsupported_mcus))
 print("%-15s %-15s %6s %6s %6s %6s" % ('type', 'core', 'flash', 'sram', 'eeprom', 'freq'))
-for k in sorted(unsupported_mcus.keys()):
-    v = unsupported_mcus[k]
-    print("%-15s %-15s %6s %6s %6s %6s" % (k, v['core'], v['flash_size'], v['sram_size'], v['eeprom_size'], v['freq']))
+if unsupported_mcus:
+    print('---- unsupported mcus ----')
+    for k in sorted(unsupported_mcus.keys()):
+        v = unsupported_mcus[k]
+        print("%-15s %-15s %6s %6s %6s %6s" % (k, v['core'], v['flash_size'], v['sram_size'], v['eeprom_size'], v['freq']))
+if wrong_param_mcus:
+    print('---- mcus with wrong params ----')
+    for k in sorted(wrong_param_mcus.keys()):
+        v = wrong_param_mcus[k]
+        print("%-15s %-15s %6s %6s %6s %6s" % (k, v['core'], v['flash_size'], v['sram_size'], v['eeprom_size'], v['freq']))
