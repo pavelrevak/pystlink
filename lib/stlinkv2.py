@@ -100,7 +100,7 @@ class Stlink():
         # WORKAROUNF for OS/X 10.11+
         # ... retry XFER if first is timeout.
         # only during this command it is necessary
-        rx = self._connector.xfer([Stlink.STLINK_GET_VERSION, 0x80], rx_len=6, retry=1, tout=100)
+        rx = self._connector.xfer([Stlink.STLINK_GET_VERSION, 0x80], rx_len=6, retry=2, tout=200)
         ver = int.from_bytes(rx[:2], byteorder='big')
         dev_ver = self._connector.version
         self._ver_stlink = (ver >> 12) & 0xf

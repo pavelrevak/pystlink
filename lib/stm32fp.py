@@ -21,6 +21,8 @@ class Flash():
     FLASH_CR_MER_BIT = 0x00000004
     FLASH_CR_STRT_BIT = 0x00000040
     FLASH_SR_BUSY_BIT = 0x00000001
+    FLASH_SR_PGERR_BIT = 0x00000004
+    FLASH_SR_WRPRTERR_BIT = 0x00000010
     FLASH_SR_EOP_BIT = 0x00000020
 
     # PARAMS
@@ -94,10 +96,10 @@ class Flash():
         self._dbg.bargraph_start('Erasing FLASH', value_min=addr, value_max=addr + size)
         while True:
             for page_size in erase_sizes:
-                if addr < page_addr + page_size * 1024:
+                if addr < page_addr + page_size:
                     self._dbg.bargraph_update(value=page_addr)
                     self.erase_page(page_addr)
-                page_addr += page_size * 1024
+                page_addr += page_size
                 if addr + size < page_addr:
                     self._dbg.bargraph_done()
                     return

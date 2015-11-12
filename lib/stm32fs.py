@@ -152,10 +152,10 @@ class Flash():
         sector = 0
         while True:
             for erase_size in erase_sizes:
-                if addr < erase_addr + erase_size * 1024:
+                if addr < erase_addr + erase_size:
                     self._dbg.bargraph_update(value=erase_addr)
                     self.erase_sector(sector, erase_size)
-                erase_addr += erase_size * 1024
+                erase_addr += erase_size
                 if addr + size < erase_addr:
                     self._dbg.bargraph_done()
                     return
