@@ -8,7 +8,7 @@ Goal of this project is to bring more flexible support for different MCUs, very 
 
 ## Features
 
-- running on **Linux**, **Mac OS/X** (also on OS/X 10.11+) and **Windows**
+- running on **Linux**, **Mac OS/X** (also on OS/X 10.11.x) and **Windows**
 - simple command line interface
 - detect MCU
 - dump registers and memory
@@ -21,7 +21,6 @@ Goal of this project is to bring more flexible support for different MCUs, very 
 
 ### Planed features
 
-- support for new unlisted MCUs (STM32F46x, STM32F47x, ..)
 - FLASH support for other MCU types (STM32L)
 - FLASH information block (system memory, option bytes and OTP area)
 - connecting under RESET
@@ -32,13 +31,13 @@ Goal of this project is to bring more flexible support for different MCUs, very 
 - pip installer
 - proxy to GDB
 - and maybe GUI
-- support for ST-Link/V1 is NOT planed, use ST-Link/V2 instead
+- support for ST-Link/V1 is NOT planed, use ST-Link/V2 or V2-1 instead
 
 ## Install
 
 ### Requirements
 
-- **Python v3.x** (tested with python-3.4)
+- **Python v3.x** (tested with python-3.4 and 3.5)
 - [**pyusbs**](https://github.com/walac/pyusb)
 - [**libusb**](http://libusbx.org) or any other libusb driver
   - for Windows copy libusb-1.0.dll into Windows/System32 directory
@@ -121,6 +120,7 @@ examples:
   pystlink.py -n reset:halt write:pc:0x20000010 dump:pc core:step dump:all
   pystlink.py flash:erase:verify:app.bin
   pystlink.py flash:erase flash:verify:0x08010000:boot.bin```
+````
 
 ## Supported programmers
 
@@ -132,17 +132,17 @@ From ST exists actually three different SWD programmers:
 
 Minimum recommended firmware version of ST-Link is **V2J21xx** or newer. Otherwise is recommended upgrade using [ST-LINK/V2 firmware upgrade](http://www.st.com/web/en/catalog/tools/PF258194) tool.
 
-### Mac OS/X 10.11
+### Mac OS/X 10.11.x
 
 Latest OS/X from Apple brings lot of problems around USB, especially with ST-Link devices.
 The problem appear if pystlink (or any other programmer for ST-Link like openocd, stlink, ..) is started second time then connection to st-link ends with timeouts.
-**Pystlink** has currently implemented some basic workarounds, to correctly run on **OS/X 10.11.x**. If you get some problems, please report it.
+**Pystlink** has currently implemented some basic workarounds, to bring correct functionality on **OS/X 10.11.x**. If you get some problems, please report it.
 
 ## Supported MCUs
 
-Currently almost all **ST32F** and **ST32L** [MCU](http://www.st.com/web/en/catalog/mmc/FM141/SC1169).
+Currently almost all **ST32F** and **ST32L** [MCU](http://www.st.com/web/en/catalog/mmc/FM141/SC1169). There is script `list_new_stm32.py` which compare supported MCUs with all listed on st.com.
 
-FLASHing support is for all **STM32F**.
+FLASHing support is currently for all **STM32F**.
 
 **Not all MCUs are tested**. Please report any problems to [Issues tracker](https://github.com/pavelrevak/pystlink/issues).
 
@@ -152,11 +152,11 @@ In WiKi is some basic info about STM32 naming: [STM32 coding matrix](https://git
 
 Code is under [MIT license](https://github.com/pavelrevak/pystlink/blob/master/LICENSE).
 
-In general, this program is allowed to use in commercial and without any limitations, but if you make some changes or updates then will be nice to share it.
+In general, this program is allowed to copy, share, change, use in commercial and without any limitations, but if you make some changes or updates then will be nice to share it.
 
 Support is only by [Issues tracker](https://github.com/pavelrevak/pystlink/issues)
 
-PYSTLINK is inspired by [OpenOCD](http://openocd.org/), [STLINK](https://github.com/texane/stlink) and lot of info is from sniffed USB communication with [original ST-LINK](http://www.st.com/web/en/catalog/tools/PF258168) program.
+**PYSTLINK** is inspired by [OpenOCD](http://openocd.org/), [STLINK](https://github.com/texane/stlink) and lot of info is from sniffed USB communication with [original ST-LINK](http://www.st.com/web/en/catalog/tools/PF258168) program.
 
 ## TAGS
 ST-Link/V2, stlink, SWD, Python, ARM, CortexM, STM32, debug, FLASH, USB
