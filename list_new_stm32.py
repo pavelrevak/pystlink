@@ -37,6 +37,7 @@ for mcu in mcus:
     sram = int(mcu.get('XJG510^VT-007!0'))
     eeprom = mcu.get('STP681^VT-003!0')
     eeprom = 0 if eeprom == '-' else int(eeprom) // 1024
+    url = 'http://www.st.com/' + mcu.get('URL')
     if m in supported_mcus:
         smcu = supported_mcus[m]
         ok = True
@@ -55,6 +56,8 @@ for mcu in mcus:
                 'flash_size': flash,
                 'sram_size': sram,
                 'eeprom_size': eeprom,
+                'url': url,
+                'supported_mcu': smcu,
             }
     else:
         unsupported_mcus[m] = {
@@ -63,6 +66,7 @@ for mcu in mcus:
             'flash_size': flash,
             'sram_size': sram,
             'eeprom_size': eeprom,
+            'url': url,
         }
 
 print("%-15s %-15s %6s %6s %6s %6s" % ('type', 'core', 'flash', 'sram', 'eeprom', 'freq'))
@@ -70,9 +74,11 @@ if unsupported_mcus:
     print('---- unsupported mcus ----')
     for k in sorted(unsupported_mcus.keys()):
         v = unsupported_mcus[k]
-        print("%-15s %-15s %6s %6s %6s %6s" % (k, v['core'], v['flash_size'], v['sram_size'], v['eeprom_size'], v['freq']))
+        print("%-15s %-15s %6s %6s %6s %6s %s" % (k, v['core'], v['flash_size'], v['sram_size'], v['eeprom_size'], v['freq'], v['url']))
 if wrong_param_mcus:
     print('---- mcus with wrong params ----')
     for k in sorted(wrong_param_mcus.keys()):
         v = wrong_param_mcus[k]
-        print("%-15s %-15s %6s %6s %6s %6s" % (k, v['core'], v['flash_size'], v['sram_size'], v['eeprom_size'], v['freq']))
+        s = v['supported_mcu']
+        print("%-15s %-15s %6s %6s %6s %6s %s" % (k, v['core'], v['flash_size'], v['sram_size'], v['eeprom_size'], v['freq'], v['url']))
+        print("%-15s %-15s %6s %6s %6s %6s" % ('...', v['core'], s['flash_size'], s['sram_size'], s['eeprom_size'], s['freq']))
