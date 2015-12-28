@@ -33,7 +33,8 @@ for mcu in mcus:
     m = fix_cpu_type(mcu.get('XJE010^VT-007!0'))
     core = mcu.get('STP00920^VT-007!0')
     freq = int(mcu.get('XJG535^VT-007!45'))
-    flash = int(mcu.get('STP279^VT-007!24'))
+    flash = mcu.get('STP279^VT-007!24')
+    flash = 0 if flash == '-' else int(flash)
     sram = int(mcu.get('XJG510^VT-007!0'))
     eeprom = mcu.get('STP681^VT-003!0')
     eeprom = 0 if eeprom == '-' else int(eeprom) // 1024

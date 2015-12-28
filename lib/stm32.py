@@ -37,6 +37,7 @@ class Stm32():
         return reg.upper() in Stm32.REGISTERS
 
     def get_reg_all(self):
+        # TODO use instead STLINK_DEBUG_APIV2_READALLREGS
         return [(reg, self.get_reg(reg)) for reg in Stm32.REGISTERS]
 
     def get_reg(self, reg):
