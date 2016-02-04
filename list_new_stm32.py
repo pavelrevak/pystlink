@@ -35,7 +35,9 @@ for mcu in mcus:
     freq = int(mcu.get('XJG535^VT-007!45'))
     flash = mcu.get('STP279^VT-007!24')
     flash = 0 if flash == '-' else int(flash)
-    sram = int(mcu.get('XJG510^VT-007!0'))
+    sram = mcu.get('XJG510^VT-007!0')
+    if sram.isnumeric():
+        sram = int(sram)
     eeprom = mcu.get('STP681^VT-003!0')
     eeprom = 0 if eeprom == '-' else int(eeprom) // 1024
     url = 'http://www.st.com/' + mcu.get('URL')
