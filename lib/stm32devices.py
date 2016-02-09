@@ -401,7 +401,7 @@ DEVICES = [
             },
             {
                 'dev_id': 0x415,
-                'flash_size_reg': 0x1ff75e0,
+                'flash_size_reg': 0x1fff75e0,
                 'flash_driver': None,
                 'erase_sizes': None,
                 'devices': [
@@ -409,6 +409,8 @@ DEVICES = [
                     {'type': 'STM32L476xE', 'flash_size':  512, 'sram_size': 128, 'eeprom_size':  0, 'freq':  80},
                     {'type': 'STM32L476xG', 'flash_size': 1024, 'sram_size': 128, 'eeprom_size':  0, 'freq':  80},
                     {'type': 'STM32L486xG', 'flash_size': 1024, 'sram_size': 128, 'eeprom_size':  0, 'freq':  80},
+                    {'type': 'STM32L471xE', 'flash_size':  512, 'sram_size': 128, 'eeprom_size':  0, 'freq':  80},
+                    {'type': 'STM32L471xG', 'flash_size': 1024, 'sram_size': 128, 'eeprom_size':  0, 'freq':  80},
                 ],
             },
             {
