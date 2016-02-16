@@ -202,7 +202,7 @@ class PyStlink():
                     addr,
                     ' '.join(['%02x' % d for d in chunk]),
                     '   ' * (16 - len(chunk)),
-                    ''.join([chr(d) if d >= 32 and d < 127 else '\u00B7' for d in chunk]),
+                    ''.join([chr(d) if d >= 32 and d < 127 else '.' for d in chunk]),
                 ))
                 prev_chunk = chunk
                 same_chunk = False
@@ -435,6 +435,8 @@ class PyStlink():
             runtime_status = 1
         except (ValueError, OverflowError, FileNotFoundError, Exception) as e:
             self._dbg.error('Parameter error: %s' % e)
+            if args.verbosity >= 3:
+                raise e
             runtime_status = 1
         if self._stlink:
             try:
