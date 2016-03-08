@@ -29,8 +29,8 @@ list of available actions:
   dump16:{addr}          print content of 16 bit memory register
   dump8:{addr}           print content of 8 bit memory register
 
-  write:{reg}:{data}     write register (halt core)
-  write:{addr}:{data}    write 32 bit memory register
+  set:{reg}:{data}     set register (halt core)
+  set:{addr}:{data}    set 32 bit memory register
 
   read:{addr}:{size}:{file}      read memory with size into file
   read:sram[:{size}]:{file}      read SRAM into file
@@ -39,9 +39,9 @@ list of available actions:
   fill:{addr}:{size}:{pattern}   fill memory with a pattern
   fill:sram[:{size}]:{pattern}   fill SRAM memory with a pattern
 
-  upload:{file.srec}     upload SREC file into memory
-  upload:{addr}:{file}   upload binary file into memory
-  upload:sram:{file}     upload binary file into SRAM memory
+  write:{file.srec}     write SREC file into memory
+  write:{addr}:{file}   write binary file into memory
+  write:sram:{file}     write binary file into SRAM memory
 
   flash:erase            complete erase FLASH memory aka mass erase
   flash[:erase][:verify]:{file.srec}     erase + flash SREC file + verify
@@ -62,9 +62,9 @@ examples:
   pystlink.py -v --cpu STM32F051R8
   pystlink.py -q --cpu STM32F03 dump:flash dump:sram
   pystlink.py dump:0x08000000:256
-  pystlink.py write:0x48000018:0x00000100 dump:0x48000014
+  pystlink.py set:0x48000018:0x00000100 dump:0x48000014
   pystlink.py read:sram:256:aaa.bin read:flash:bbb.bin
-  pystlink.py -n reset:halt write:pc:0x20000010 dump:pc core:step dump:all
+  pystlink.py -r reset:halt set:pc:0x20000010 dump:pc core:step dump:all
   pystlink.py flash:erase:verify:app.bin
   pystlink.py flash:erase flash:verify:0x08010000:boot.bin
 """
