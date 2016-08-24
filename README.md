@@ -50,7 +50,7 @@ Goal of this project is to bring more flexible support for different MCUs, very 
 
 ## Help
 ```
-usage: pystlink [-h] [-q | -i | -v | -d] [-V] [-c CPU] [-n]
+usage: pystlink [-h] [-q | -i | -v | -d] [-V] [-c CPU] [-r] [-u]
                 [action [action ...]]
 
 pystlink v0.0.0 (ST-LinkV2)
@@ -61,7 +61,8 @@ optional arguments:
   -h, --help         show this help message and exit
   -V, --version      show program's version number and exit
   -c CPU, --cpu CPU  set expected CPU type [eg: STM32F051, STM32L4]
-  -n, --norun        do not run core when program end (if core was halted)
+  -r, --no-run       do not run core when program end (if core was halted)
+  -u, --no-unmount   do not unmount DISCOVERY from ST-Link/V2-1 on OS/X platform
 
 set verbosity level:
   -q, --quiet
@@ -92,9 +93,9 @@ list of available actions:
   fill:{addr}:{size}:{pattern}   fill memory with a pattern
   fill:sram[:{size}]:{pattern}   fill SRAM memory with a pattern
 
-  upload:{file.srec}     upload SREC file into memory
-  upload:{addr}:{file}   upload binary file into memory
-  upload:sram:{file}     upload binary file into SRAM memory
+  write:{file.srec}     write SREC file into memory
+  write:{addr}:{file}   write binary file into memory
+  write:sram:{file}     write binary file into SRAM memory
 
   flash:erase            complete erase FLASH memory aka mass erase
   flash[:erase][:verify]:{file.srec}     erase + flash SREC file + verify
@@ -119,7 +120,7 @@ examples:
   pystlink.py read:sram:256:aaa.bin read:flash:bbb.bin
   pystlink.py -r reset:halt set:pc:0x20000010 dump:pc core:step dump:all
   pystlink.py flash:erase:verify:app.bin
-  pystlink.py flash:erase flash:verify:0x08010000:boot.bin```
+  pystlink.py flash:erase flash:verify:0x08010000:boot.bin
 ````
 
 ## Supported programmers
