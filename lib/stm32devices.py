@@ -529,6 +529,7 @@ DEVICES = [
                 'flash_driver': 'STM32FS',
                 'erase_sizes': (16*1024, 16*1024, 16*1024, 16*1024, 64*1024, 128*1024, 128*1024, 128*1024, 128*1024, 128*1024, 128*1024, 128*1024, ),
                 'devices': [
+                    {'type': 'STM32F412xE', 'flash_size': 512, 'sram_size': 256, 'eeprom_size':  0, 'freq': 100},
                     {'type': 'STM32F412xG', 'flash_size': 1024, 'sram_size': 256, 'eeprom_size':  0, 'freq': 100},
                 ],
             },

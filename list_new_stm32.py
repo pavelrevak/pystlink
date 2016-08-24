@@ -67,6 +67,9 @@ for mcu in mcus:
     freq = int(mcu.get('freq'))
     flash_size = int(mcu.get('flash_size'))
     sram_size = mcu.get('sram_size')
+    if sram_size is None:
+        mcu['sram_size'] = ''
+        sram_size = ''
     if sram_size.isnumeric():
         sram_size = int(sram_size)
     eeprom_size = mcu.get('eeprom_size')
