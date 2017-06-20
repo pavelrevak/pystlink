@@ -38,7 +38,7 @@ Goal of this project is to bring more flexible support for different MCUs, very 
 ### Requirements
 
 - **Python v3.x** (tested with python-3.4 and 3.5)
-- [**pyusbs**](https://github.com/walac/pyusb)
+- [**pyusb**](https://github.com/walac/pyusb)
 - [**libusb**](http://libusbx.org) or any other libusb driver
   - for Windows copy libusb-1.0.dll into Windows/System32 directory
 
