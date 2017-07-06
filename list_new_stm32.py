@@ -135,8 +135,8 @@ if wrong_param_mcus:
         s = v['supported_mcu']
         print(v['url'])
         print("%-15s %-15s %6s %6s %6s %6s" % (
-            k, v['core'], v['flash_size'], v['sram_size'], v.get('eeprom_size'), v['freq']
+            k, v.get('core', ''), v['flash_size'], v['sram_size'], v.get('eeprom_size'), v['freq']
         ))
         print("%-15s %-15s %6s %6s %6s %6s" % (
-            '(pystlink)', v['core'], s['flash_size'], s['sram_size'], s.get('eeprom_size'), s['freq']
+            '(pystlink)', v.get('core', ''), s['flash_size'], s['sram_size'], s.get('eeprom_size'), s['freq']
         ))
