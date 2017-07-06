@@ -16,10 +16,19 @@ def fix_cpu_type(cpu_type):
     raise Exception('"%s" is not STM32 family' % cpu_type)
 
 print("Downloading list of all STM32 MCUs from ST.com...")
-req = urllib.request.urlopen('http://www.st.com/content/st_com/en/products/microcontrollers/stm32-32-bit-arm-cortex-mcus.product-grid.html/SC1169.json')
-res = req.read()
-print("downloaded: %d KBytes" % (len(res) / 1024))
-raw_json = json.loads(res.decode('utf-8'))
+# req = urllib.request.urlopen('http://www.st.com/content/st_com/en/products/microcontrollers/stm32-32-bit-arm-cortex-mcus.product-grid.html/SC1169.json')
+
+URLS = [
+    'http://www.st.com/content/st_com/en/products/microcontrollers/stm32-32-bit-arm-cortex-mcus.product-grid.html/SC2154.json',
+    'http://www.st.com/content/st_com/en/products/microcontrollers/stm32-32-bit-arm-cortex-mcus.product-grid.html/SC2155.json',
+    'http://www.st.com/content/st_com/en/products/microcontrollers/stm32-32-bit-arm-cortex-mcus.product-grid.html/SC2157.json',
+]
+
+def download_data(url):
+    req = urllib.request.urlopen(url)
+    res = req.read()
+    print("downloaded: %d KBytes" % (len(res) / 1024))
+    return json.loads(res.decode('utf-8'))
 
 # columns has important keys:
 #  - id
@@ -34,21 +43,25 @@ REQUESTED_COLUMNS = {
     'Internal RAM Size': 'sram_size',
 }
 
+raw_jsons = [download_data(url) for url in URLS]
+
 columns = {}
-for column in raw_json['columns']:
-    if column['name'] in REQUESTED_COLUMNS:
-        columns[column['id']] = REQUESTED_COLUMNS[column['name']]
+for raw_json in raw_jsons:
+    for column in raw_json['columns']:
+        if column['name'] in REQUESTED_COLUMNS:
+            columns[column['id']] = REQUESTED_COLUMNS[column['name']]
 
 mcus = []
-for row in raw_json['rows']:
-    mcu = {}
-    mcu['url'] = 'http://www.st.com' + row['productFolderUrl']
-    for cell in row['cells']:
-        column_id = cell['columnId']
-        if column_id in columns:
-            column_name = columns[column_id]
-            mcu[column_name] = cell['value']
-    mcus.append(mcu)
+for raw_json in raw_jsons:
+    for row in raw_json['rows']:
+        mcu = {}
+        mcu['url'] = 'http://www.st.com' + row['productFolderUrl']
+        for cell in row['cells']:
+            column_id = cell['columnId']
+            if column_id in columns:
+                column_name = columns[column_id]
+                mcu[column_name] = cell['value']
+        mcus.append(mcu)
 print("MCUs on ST.com is: %d" % len(mcus))
 
 supported_mcus = {}
@@ -64,8 +77,18 @@ for mcu in mcus:
     mcu_type_fixed = fix_cpu_type(mcu['type'])
     mcu_type = mcu.get('type')
     core = mcu.get('core')
-    freq = int(mcu.get('freq'))
-    flash_size = int(mcu.get('flash_size'))
+    freq = mcu.get('freq')
+    if freq is None:
+        mcu['freq'] = ''
+        freq = ''
+    if freq.isnumeric():
+        freq = int(freq)
+    flash_size = mcu.get('flash_size')
+    if flash_size is None:
+        mcu['flash_size'] = ''
+        flash_size = ''
+    if flash_size.isnumeric():
+        flash_size = int(flash_size)
     sram_size = mcu.get('sram_size')
     if sram_size is None:
         mcu['sram_size'] = ''
@@ -103,7 +126,7 @@ if unsupported_mcus:
         v = unsupported_mcus[k]
         print(v['url'])
         print("%-15s %-15s %6s %6s %6s %6s" % (
-            k, v['core'], v['flash_size'], v['sram_size'], v.get('eeprom_size'), v['freq']
+            k, v.get('core', ''), v['flash_size'], v['sram_size'], v.get('eeprom_size'), v['freq']
         ))
 if wrong_param_mcus:
     print('---- mcus with wrong params (%d) ----' % len(wrong_param_mcus))
