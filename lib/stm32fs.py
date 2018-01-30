@@ -87,19 +87,19 @@ class Flash():
         {
             'min_voltage': 2.7,
             'max_mass_erase_time': 16,
-            'max_erase_time': {16: .5, 64: 1.1, 128: 2},
+            'max_erase_time': {16: .5, 32: 1.1, 64: 1.1, 128: 2, 256: 2},
             'FLASH_CR_PSIZE': FLASH_CR_PSIZE_X32,
             'FLASH_WRITER_CODE': FLASH_WRITER_F4_CODE_X32,
         }, {
             'min_voltage': 2.1,
             'max_mass_erase_time': 22,
-            'max_erase_time': {16: .6, 64: 1.4, 128: 2.6},
+            'max_erase_time': {16: .6, 32: 1.4, 64: 1.4, 128: 2.6, 256: 2.6},
             'FLASH_CR_PSIZE': FLASH_CR_PSIZE_X16,
             'FLASH_WRITER_CODE': FLASH_WRITER_F4_CODE_X16,
         }, {
             'min_voltage': 1.8,
             'max_mass_erase_time': 32,
-            'max_erase_time': {16: .8, 64: 2.4, 128: 4},
+            'max_erase_time': {16: .8, 32: 2.4, 64: 2.4, 128: 4, 256: 4},
             'FLASH_CR_PSIZE': FLASH_CR_PSIZE_X8,
             'FLASH_WRITER_CODE': FLASH_WRITER_F4_CODE_X8,
         }
@@ -144,7 +144,7 @@ class Flash():
         flash_cr_value |= self._params['FLASH_CR_PSIZE'] | (sector << Flash.FLASH_CR_SNB_BITINDEX)
         self._stlink.set_debugreg32(Flash.FLASH_CR_REG, flash_cr_value)
         self._stlink.set_debugreg32(Flash.FLASH_CR_REG, flash_cr_value | Flash.FLASH_CR_STRT_BIT)
-        self.wait_busy(self._params['max_erase_time'][erase_size])
+        self.wait_busy(self._params['max_erase_time'][erase_size / 1024])
 
     def erase_sectors(self, flash_start, erase_sizes, addr, size):
         erase_addr = flash_start
