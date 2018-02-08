@@ -126,9 +126,9 @@ class Flash():
             # unlock keys
             self._stlink.set_debugreg32(Flash.FLASH_KEYR_REG, 0x45670123)
             self._stlink.set_debugreg32(Flash.FLASH_KEYR_REG, 0xcdef89ab)
-        # programing locked
-        if self._stlink.get_debugreg32(Flash.FLASH_CR_REG) & Flash.FLASH_CR_LOCK_BIT:
-            raise lib.stlinkex.StlinkException('Error unlocking FLASH')
+            # check if programing was unlocked
+            if self._stlink.get_debugreg32(Flash.FLASH_CR_REG) & Flash.FLASH_CR_LOCK_BIT:
+                raise lib.stlinkex.StlinkException('Error unlocking FLASH')
 
     def lock(self):
         self._stlink.set_debugreg32(Flash.FLASH_CR_REG, Flash.FLASH_CR_LOCK_BIT)
