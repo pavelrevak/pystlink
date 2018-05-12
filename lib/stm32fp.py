@@ -2,6 +2,7 @@ import time
 import lib.stm32
 import lib.stlinkex
 
+import time
 
 class Flash():
     FLASH_REG_BASE = 0x40022000
@@ -68,8 +69,15 @@ class Flash():
     def unlock(self):
         self._driver.core_reset_halt()
         # programing locked
-        if self._stlink.get_debugreg32(Flash.FLASH_CR_REG) & Flash.FLASH_CR_LOCK_BIT:
+#       if self._stlink.get_debugreg32(Flash.FLASH_CR_REG) & Flash.FLASH_CR_LOCK_BIT:
+#           # unlock keys
+#           self._stlink.set_debugreg32(Flash.FLASH_KEYR_REG, 0x45670123)
+#           self._stlink.set_debugreg32(Flash.FLASH_KEYR_REG, 0xcdef89ab)
+        time.sleep(0.1)
+        while self._stlink.get_debugreg32(Flash.FLASH_CR_REG) & Flash.FLASH_CR_LOCK_BIT:
             # unlock keys
+            print("flash is locked:  try to unlock flash")
+            time.sleep(0.1)
             self._stlink.set_debugreg32(Flash.FLASH_KEYR_REG, 0x45670123)
             self._stlink.set_debugreg32(Flash.FLASH_KEYR_REG, 0xcdef89ab)
         # programing locked
@@ -179,6 +187,7 @@ class Stm32FP(lib.stm32.Stm32):
                 flash.erase_pages(self.FLASH_START, erase_sizes, addr, len(data))
             else:
                 flash.erase_all()
+        flash.unlock()
         self._dbg.bargraph_start('Writing FLASH', value_min=addr, value_max=addr + len(data))
         flash.init_write(Stm32FP.SRAM_START)
         while(data):

@@ -1,3 +1,5 @@
+#!/usr/bin/py -3
+
 import unittest
 
 import pystlink
