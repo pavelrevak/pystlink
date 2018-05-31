@@ -583,7 +583,7 @@ DEVICES = [
     {
         'part_no': 0xc27,
         'core': 'CortexM7',
-        'idcode_reg': 0xE0042000,
+        'idcode_reg': [0xe0042000, 0x5c001000],
         'devices': [
             {
                 'dev_id': 0x449,
@@ -627,6 +627,16 @@ DEVICES = [
                     {'type': 'STM32F723xE', 'flash_size':  512, 'sram_size': 256, 'eeprom_size':  0, 'freq': 216},
                     {'type': 'STM32F732xE', 'flash_size':  512, 'sram_size': 256, 'eeprom_size':  0, 'freq': 216},
                     {'type': 'STM32F733xE', 'flash_size':  512, 'sram_size': 256, 'eeprom_size':  0, 'freq': 216},
+                ]
+            },
+            {
+                'dev_id': 0x450,
+                'flash_size_reg': 0x1ff1e880,
+                'flash_driver': None,
+                'erase_sizes': None,
+                'devices': [
+                    {'type': 'STM32H743xI', 'flash_size': 2048, 'sram_size': 1024, 'eeprom_size':  0, 'freq': 400},
+                    {'type': 'STM32H753xI', 'flash_size': 2048, 'sram_size': 1024, 'eeprom_size':  0, 'freq': 400},
                 ]
             },
         ]

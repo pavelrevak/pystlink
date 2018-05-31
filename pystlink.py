@@ -92,13 +92,19 @@ class PyStlink():
         raise lib.stlinkex.StlinkException('PART_NO: 0x%03x is not supported' % partno)
 
     def find_mcus_by_devid(self):
-        idcode = self._stlink.get_debugreg32(self._mcus_by_core['idcode_reg'])
-        self._dbg.verbose("IDCODE: %08x" % idcode)
-        devid = 0xfff & idcode
-        for mcu_devid in self._mcus_by_core['devices']:
-            if mcu_devid['dev_id'] == devid:
-                self._mcus_by_devid = mcu_devid
-                return
+        # STM32H7 hack: this MCU has ID-CODE on different address than STM32F7
+        devid = 0x000
+        idcode_regs = self._mcus_by_core['idcode_reg']
+        if isinstance(self._mcus_by_core['idcode_reg'], int):
+            idcode_regs = [idcode_regs]
+        for idcode_reg in idcode_regs:
+            idcode = self._stlink.get_debugreg32(idcode_reg)
+            self._dbg.verbose("IDCODE: %08x" % idcode)
+            devid = 0xfff & idcode
+            for mcu_devid in self._mcus_by_core['devices']:
+                if mcu_devid['dev_id'] == devid:
+                    self._mcus_by_devid = mcu_devid
+                    return
         raise lib.stlinkex.StlinkException('DEV_ID: 0x%03x is not supported' % devid)
 
     def find_mcus_by_flash_size(self):
