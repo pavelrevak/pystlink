@@ -40,7 +40,7 @@ REQUESTED_COLUMNS = {
     'Operating Frequency': 'freq',
     'FLASH Size': 'flash_size',
     'Data E2PROM': 'eeprom_size',
-    'Internal RAM Size': 'sram_size',
+    'RAM Size': 'sram_size',
 }
 
 raw_jsons = [download_data(url) for url in URLS]
