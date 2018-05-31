@@ -133,6 +133,7 @@ DEVICES = [
                     {'type': 'STM32L073xB', 'flash_size':  128, 'sram_size':  20, 'eeprom_size':  6, 'freq':  32},
                     {'type': 'STM32L073xZ', 'flash_size':  192, 'sram_size':  20, 'eeprom_size':  6, 'freq':  32},
                     {'type': 'STM32L081xZ', 'flash_size':  192, 'sram_size':  20, 'eeprom_size':  6, 'freq':  32},
+                    {'type': 'STM32L081xB', 'flash_size':  128, 'sram_size':  20, 'eeprom_size':  6, 'freq':  32},
                     {'type': 'STM32L082xZ', 'flash_size':  192, 'sram_size':  20, 'eeprom_size':  6, 'freq':  32},
                     {'type': 'STM32L082xB', 'flash_size':  128, 'sram_size':  20, 'eeprom_size':  6, 'freq':  32},
                     {'type': 'STM32L083x8', 'flash_size':   64, 'sram_size':  20, 'eeprom_size':  3, 'freq':  32},
