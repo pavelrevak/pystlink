@@ -107,7 +107,7 @@ class Stlink():
         self._ver_jtag = (ver >> 6) & 0x3f
         self._ver_swim = ver & 0x3f if dev_ver == 'V2' else None
         self._ver_mass = ver & 0x3f if dev_ver == 'V2-1' else None
-        self._ver_api = 2 if self._ver_jtag > 11 else 1
+        self._ver_api = 3 if dev_ver == 'V3' else 2 if self._ver_jtag > 11 else 1
         self._ver_str = "%s V%dJ%d" % (dev_ver, self._ver_stlink, self._ver_jtag)
         if dev_ver == 'V2':
             self._ver_str += "S%d" % self._ver_swim
@@ -115,7 +115,7 @@ class Stlink():
             self._ver_str += "M%d" % self._ver_mass
         if self.ver_api == 1:
             raise self._dbg.warning("ST-Link/%s is not supported, please upgrade firmware." % self._ver_str)
-        if self.ver_jtag < 21:
+        if self.ver_jtag < 21 and not dev_ver == 'V3':
             self._dbg.warning("ST-Link/%s is not recent firmware, please upgrade first - functionality is not guaranteed." % self._ver_str)
 
     @property

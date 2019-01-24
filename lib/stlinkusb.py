@@ -19,6 +19,12 @@ class StlinkUsbConnector():
             'idProduct': 0x374b,
             'outPipe': 0x01,
             'inPipe': 0x81,
+        }, {
+            'version': 'V3',
+            'idVendor': 0x0483,
+            'idProduct': 0x374f,
+            'outPipe': 0x01,
+            'inPipe': 0x81,
         }
     ]
 
