@@ -141,6 +141,18 @@ DEVICES = [
                     {'type': 'STM32L083xZ', 'flash_size':  192, 'sram_size':  20, 'eeprom_size':  6, 'freq':  32},
                 ],
             },
+            {
+                'dev_id': 0x460,
+                'flash_size_reg': 0x1fff75e0,
+                'flash_driver': ,
+                'erase_sizes': (2048, ),
+                'devices': [
+                    {'type': 'STM32G070x8', 'flash_size':   64, 'sram_size':  32, 'eeprom_size':  0, 'freq':  64},
+                    {'type': 'STM32G070xB', 'flash_size':  128, 'sram_size':  32, 'eeprom_size':  0, 'freq':  64},
+                    {'type': 'STM32G071x8', 'flash_size':   64, 'sram_size':  32, 'eeprom_size':  0, 'freq':  64},
+                    {'type': 'STM32G071xB', 'flash_size':  128, 'sram_size':  32, 'eeprom_size':  0, 'freq':  64},
+                ],
+            },
         ],
     },
     {
