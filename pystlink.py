@@ -70,6 +70,8 @@ examples:
   pystlink.py -r reset:halt set:pc:0x20000010 dump:pc core:step dump:all
   pystlink.py flash:erase:verify:app.bin
   pystlink.py flash:erase flash:verify:0x08010000:boot.bin
+  pystlink.py -n 2
+  pystlink.py -s 
 """
 
 
@@ -187,7 +189,7 @@ class PyStlink():
             self._driver = self._core
 
     def detect_cpu(self, expected_cpus, unmount=False):
-        self._connector = lib.stlinkusb.StlinkUsbConnector(dbg=self._dbg)
+        self._connector = lib.stlinkusb.StlinkUsbConnector(dbg=self._dbg, serial=self._serial, index = self._index)
         if unmount:
             self._connector.unmount_discovery()
         self._stlink = lib.stlinkv2.Stlink(self._connector, dbg=self._dbg)
@@ -429,10 +431,14 @@ class PyStlink():
         parser.add_argument('-c', '--cpu', action='append', help='set expected CPU type [eg: STM32F051, STM32L4]')
         parser.add_argument('-r', '--no-run', action='store_true', help='do not run core when program end (if core was halted)')
         parser.add_argument('-u', '--no-unmount', action='store_true', help='do not unmount DISCOVERY from ST-Link/V2-1 on OS/X platform')
+        parser.add_argument('-s', '--serial', dest='serial', help='Use Stlink with given serial number')
+        parser.add_argument('-n', '--num-index', type=int, dest='index', default=0, help='Use Stlink with given index')
         group_actions = parser.add_argument_group(title='actions')
         group_actions.add_argument('action', nargs='*', help='actions will be processed sequentially')
         args = parser.parse_args()
         self._dbg = lib.dbg.Dbg(args.verbosity)
+        self._serial = args.serial
+        self._index = args.index
         runtime_status = 0
         try:
             self.detect_cpu(args.cpu, not args.no_unmount)
