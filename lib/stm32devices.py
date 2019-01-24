@@ -266,19 +266,6 @@ DEVICES = [
                 ],
             },
             {
-                'dev_id': 0x422,
-                'flash_size_reg': 0x1ffff7cc,
-                'flash_driver': 'STM32FP',
-                'erase_sizes': (2048, ),
-                'devices': [
-                    {'type': 'STM32F302xB', 'flash_size':  128, 'sram_size':  32, 'eeprom_size':  0, 'freq':  72},
-                    {'type': 'STM32F302xC', 'flash_size':  256, 'sram_size':  40, 'eeprom_size':  0, 'freq':  72},
-                    {'type': 'STM32F303xB', 'flash_size':  128, 'sram_size':  40, 'eeprom_size':  0, 'freq':  72},
-                    {'type': 'STM32F303xC', 'flash_size':  256, 'sram_size':  48, 'eeprom_size':  0, 'freq':  72},
-                    {'type': 'STM32F358xC', 'flash_size':  256, 'sram_size':  48, 'eeprom_size':  0, 'freq':  72},
-                ],
-            },
-            {
                 'dev_id': 0x427,
                 'flash_size_reg': 0x1ff800cc,
                 'flash_driver': 'STM32L0',
@@ -328,18 +315,6 @@ DEVICES = [
                 ],
             },
             {
-                'dev_id': 0x432,
-                'flash_size_reg': 0x1ffff7cc,
-                'flash_driver': 'STM32FP',
-                'erase_sizes': (2048, ),
-                'devices': [
-                    {'type': 'STM32F373x8', 'flash_size':   64, 'sram_size':  16, 'eeprom_size':  0, 'freq':  72},
-                    {'type': 'STM32F373xB', 'flash_size':  128, 'sram_size':  24, 'eeprom_size':  0, 'freq':  72},
-                    {'type': 'STM32F373xC', 'flash_size':  256, 'sram_size':  32, 'eeprom_size':  0, 'freq':  72},
-                    {'type': 'STM32F378xC', 'flash_size':  256, 'sram_size':  32, 'eeprom_size':  0, 'freq':  72},
-                ],
-            },
-            {
                 'dev_id': 0x436,
                 'flash_size_reg': 0x1ff800cc,
                 'flash_driver': 'STM32L0',
@@ -368,6 +343,38 @@ DEVICES = [
                     {'type': 'STM32L152xE',   'flash_size':  512, 'sram_size':  80, 'eeprom_size': 16, 'freq':  32},
                     {'type': 'STM32L162xD-X', 'flash_size':  384, 'sram_size':  80, 'eeprom_size': 16, 'freq':  32},
                     {'type': 'STM32L162xE',   'flash_size':  512, 'sram_size':  80, 'eeprom_size': 16, 'freq':  32},
+                ],
+            },
+        ],
+    },
+    {
+        'part_no': 0xc24,
+        'core': 'CortexM4',
+        'idcode_reg': 0xE0042000,
+        'devices': [
+            {
+                'dev_id': 0x422,
+                'flash_size_reg': 0x1ffff7cc,
+                'flash_driver': 'STM32FP',
+                'erase_sizes': (2048, ),
+                'devices': [
+                    {'type': 'STM32F302xB', 'flash_size':  128, 'sram_size':  32, 'eeprom_size':  0, 'freq':  72},
+                    {'type': 'STM32F302xC', 'flash_size':  256, 'sram_size':  40, 'eeprom_size':  0, 'freq':  72},
+                    {'type': 'STM32F303xB', 'flash_size':  128, 'sram_size':  40, 'eeprom_size':  0, 'freq':  72},
+                    {'type': 'STM32F303xC', 'flash_size':  256, 'sram_size':  48, 'eeprom_size':  0, 'freq':  72},
+                    {'type': 'STM32F358xC', 'flash_size':  256, 'sram_size':  48, 'eeprom_size':  0, 'freq':  72},
+                ],
+            },
+            {
+                'dev_id': 0x432,
+                'flash_size_reg': 0x1ffff7cc,
+                'flash_driver': 'STM32FP',
+                'erase_sizes': (2048, ),
+                'devices': [
+                    {'type': 'STM32F373x8', 'flash_size':   64, 'sram_size':  16, 'eeprom_size':  0, 'freq':  72},
+                    {'type': 'STM32F373xB', 'flash_size':  128, 'sram_size':  24, 'eeprom_size':  0, 'freq':  72},
+                    {'type': 'STM32F373xC', 'flash_size':  256, 'sram_size':  32, 'eeprom_size':  0, 'freq':  72},
+                    {'type': 'STM32F378xC', 'flash_size':  256, 'sram_size':  32, 'eeprom_size':  0, 'freq':  72},
                 ],
             },
             {
@@ -410,13 +417,6 @@ DEVICES = [
                     {'type': 'STM32F398xE', 'flash_size':  512, 'sram_size':  80, 'eeprom_size':  0, 'freq':  72},
                 ],
             },
-        ],
-    },
-    {
-        'part_no': 0xc24,
-        'core': 'CortexM4',
-        'idcode_reg': 0xE0042000,
-        'devices': [
             {
                 'dev_id': 0x413,
                 'flash_size_reg': 0x1fff7a22,
