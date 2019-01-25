@@ -6,6 +6,7 @@ import lib.stlinkv2
 import lib.stm32
 import lib.stm32fp
 import lib.stm32fs
+import lib.stm32l4
 import lib.stm32devices
 import lib.stlinkex
 import lib.dbg
@@ -174,6 +175,8 @@ class PyStlink():
             self._driver = lib.stm32fp.Stm32FPXL(self._stlink, dbg=self._dbg)
         elif flash_driver == 'STM32FS':
             self._driver = lib.stm32fs.Stm32FS(self._stlink, dbg=self._dbg)
+        elif flash_driver == 'STM32L4':
+            self._driver = lib.stm32l4.Stm32L4(self._stlink, dbg=self._dbg)
         else:
             self._driver = self._core
 

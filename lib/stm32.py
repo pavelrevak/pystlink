@@ -166,6 +166,8 @@ class Stm32():
         self._stlink.set_debugreg32(Stm32.DEMCR_REG, Stm32.DEMCR_HALT_AFTER_RESET)
         self._stlink.set_debugreg32(Stm32.AIRCR_REG, Stm32.AIRCR_SYSRESETREQ)
         self._stlink.get_debugreg32(Stm32.AIRCR_REG)
+        self._dbg.debug('Stm32.core_reset_halt(): DHCSR %08x' %
+                        self._stlink.get_debugreg32(Stm32.DHCSR_REG))
 
     def core_halt(self):
         self._dbg.debug('Stm32.core_halt()')
