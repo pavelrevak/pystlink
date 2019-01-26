@@ -80,6 +80,7 @@ class PyStlink():
         self._driver = None
 
     def find_mcus_by_core(self):
+        self._core.core_halt()
         cpuid = self._stlink.get_debugreg32(PyStlink.CPUID_REG)
         if cpuid == 0:
             raise lib.stlinkex.StlinkException('Not connected to CPU')
@@ -174,7 +175,7 @@ class PyStlink():
         elif flash_driver == 'STM32FS':
             self._driver = lib.stm32fs.Stm32FS(self._stlink, dbg=self._dbg)
         else:
-            self._driver = lib.stm32.Stm32(self._stlink, dbg=self._dbg)
+            self._driver = self._core
 
     def detect_cpu(self, expected_cpus, unmount=False):
         self._connector = lib.stlinkusb.StlinkUsbConnector(dbg=self._dbg)
@@ -186,6 +187,7 @@ class PyStlink():
         self._dbg.verbose("COREID: %08x" % self._stlink.coreid)
         if self._stlink.coreid == 0:
             raise lib.stlinkex.StlinkException('Not connected to CPU')
+        self._core = lib.stm32.Stm32(self._stlink, dbg=self._dbg)
         self.find_mcus_by_core()
         self._dbg.info("CORE:   %s" % self._mcus_by_core['core'])
         self.find_mcus_by_devid()
