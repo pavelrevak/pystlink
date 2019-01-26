@@ -176,8 +176,11 @@ class Stm32():
              self._dbg.set_verbose(2)
         i = 0
         while((self._stlink.get_debugreg32(Stm32.DHCSR_REG) & Stm32.DHCSR_HALTED) != Stm32.DHCSR_HALTED) :
-            self._stlink.set_debugreg32(Stm32.DHCSR_REG, Stm32.DHCSR_HALT)
-            i += 1
+            while True:
+                self._stlink.set_debugreg32(Stm32.DHCSR_REG, Stm32.DHCSR_HALT)
+                i += 1
+                if i & 0xff == 0:
+                    break
         self._dbg.set_verbose(verbose)
         self._dbg.debug("Halted after %d transactions" % i)
 

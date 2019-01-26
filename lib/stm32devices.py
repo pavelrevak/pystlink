@@ -654,8 +654,8 @@ DEVICES = [
             {
                 'dev_id': 0x450,
                 'flash_size_reg': 0x1ff1e880,
-                'flash_driver': None,
-                'erase_sizes': None,
+                'flash_driver': 'STM32H7',
+                'erase_sizes': (128*1024,),
                 'devices': [
                     {'type': 'STM32H743xI', 'flash_size': 2048, 'sram_size': 1024, 'eeprom_size':  0, 'freq': 400},
                     {'type': 'STM32H753xI', 'flash_size': 2048, 'sram_size': 1024, 'eeprom_size':  0, 'freq': 400},
