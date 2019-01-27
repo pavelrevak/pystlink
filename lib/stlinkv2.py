@@ -186,7 +186,7 @@ class Stlink():
 
     def set_debugreg32(self, addr, data):
         if addr % 4:
-            raise lib.stlinkex.StlinkException('get_mem_short address is not in multiples of 4')
+            raise lib.stlinkex.StlinkException('get_mem address %08x is not in multiples of 4' % addr)
         cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_APIV2_WRITEDEBUGREG]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         cmd.extend(list(data.to_bytes(4, byteorder='little')))
@@ -194,7 +194,7 @@ class Stlink():
 
     def get_debugreg32(self, addr):
         if addr % 4:
-            raise lib.stlinkex.StlinkException('get_mem_short address is not in multiples of 4')
+            raise lib.stlinkex.StlinkException('get_mem address %08xis not in multiples of 4' % addr)
         cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_APIV2_READDEBUGREG]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         rx = self._connector.xfer(cmd, rx_len=8)
