@@ -600,6 +600,17 @@ DEVICES = [
                     {'type': 'STM32L4[R|S]xxI', 'flash_size': 2048, 'sram_size': 640, 'eeprom_size':  0, 'freq': 120},
                 ],
             },
+            {
+                'dev_id': 0x495,
+                'flash_size_reg': 0x1fff75e0,
+                'flash_driver': 'STM32L4',
+                'erase_sizes': (4 * 1024, ),
+                'devices': [
+                    {'type': 'STM32WB55xC', 'flash_size':  256, 'sram_size': 128, 'eeprom_size':  0, 'freq':  64},
+                    {'type': 'STM32WB55xE', 'flash_size':  512, 'sram_size': 256, 'eeprom_size':  0, 'freq':  64},
+                    {'type': 'STM32WB55xG', 'flash_size': 1024, 'sram_size': 256, 'eeprom_size':  0, 'freq':  64},
+                ],
+            },
         ],
     },
     {
