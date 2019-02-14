@@ -19,21 +19,56 @@ class StlinkUsbConnector():
             'idProduct': 0x374b,
             'outPipe': 0x01,
             'inPipe': 0x81,
+        }, {
+            'version': 'V3',
+            'idVendor': 0x0483,
+            'idProduct': 0x374f,
+            'outPipe': 0x01,
+            'inPipe': 0x81,
         }
     ]
 
-    def __init__(self, dbg=None):
+    def _get_serial(self):
+        # The signature for get_string has changed between versions to 1.0.0b1,
+        # 1.0.0b2 and 1.0.0. Try the old signature first, if that fails try
+        # the newer one.
+        try:
+            return usb.util.get_string(self._dev, 255, self._dev.iSerialNumber)
+        except (usb.core.USBError, ValueError):
+            return usb.util.get_string(self._dev, self._dev.iSerialNumber)
+
+    def __init__(self, dbg=None, serial = None, index = 0):
         self._dbg = dbg
         self._dev_type = None
         self._xfer_counter = 0
         devices = usb.core.find(find_all=True)
+        multiple_devices = False
+        self._dev = None
+        num_stlink = 0
         for dev in devices:
             for dev_type in StlinkUsbConnector.DEV_TYPES:
                 if dev.idVendor == dev_type['idVendor'] and dev.idProduct == dev_type['idProduct']:
+                    if not serial and index == 0:
+                        if self._dev:
+                            multiple_devices = True
+                            self._dbg.info("%2d: STLINK %4s, serial %s" % (num_stlink, self._dev_type['version'], self._get_serial()))
                     self._dev = dev
                     self._dev_type = dev_type
-                    self._dbg.verbose("Successfully connected to ST-Link/%s" % dev_type['version'])
-                    return
+                    num_stlink = num_stlink + 1
+            if self._dev and serial and serial == self._get_serial():
+                break
+            if self._dev and serial == None  and index == num_stlink:
+                break
+        if multiple_devices:
+            self._dbg.info("%2d: STLINK %4s, serial %s" %
+                           (num_stlink, self._dev_type['version'],
+                            self._get_serial()))
+            raise lib.stlinkex.StlinkException(
+                "Found multiple devices. Select one with -s SERIAL or -n INDEX")
+        if self._dev:
+            self._dbg.verbose("Connected to ST-Link/%4s, serial %s" % (
+                 self._dev_type['version'],  self._get_serial()))
+            return
         raise lib.stlinkex.StlinkException('ST-Link/V2 is not connected')
 
     @property

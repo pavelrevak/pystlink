@@ -17,14 +17,17 @@ class Stm32():
     AIRCR_SYSRESETREQ = AIRCR_KEY | AIRCR_SYSRESETREQ_BIT
 
     DHCSR_KEY = 0xa05f0000
-    DHCSR_DEBUGEN_BIT = 0x00000001
-    DHCSR_HALT_BIT = 0x00000002
-    DHCSR_STEP_BIT = 0x00000004
-    DHCSR_STATUS_HALT_BIT = 0x00020000
+    DHCSR_DEBUGEN_BIT       = 0x00000001
+    DHCSR_HALT_BIT          = 0x00000002
+    DHCSR_STEP_BIT          = 0x00000004
+    DHCSR_STATUS_ENABLE_BIT = DHCSR_DEBUGEN_BIT << 16
+    DHCSR_STATUS_HALT_BIT   = DHCSR_HALT_BIT    << 16
     DHCSR_DEBUGDIS = DHCSR_KEY
     DHCSR_DEBUGEN = DHCSR_KEY | DHCSR_DEBUGEN_BIT
     DHCSR_HALT = DHCSR_KEY | DHCSR_DEBUGEN_BIT | DHCSR_HALT_BIT
     DHCSR_STEP = DHCSR_KEY | DHCSR_DEBUGEN_BIT | DHCSR_STEP_BIT
+    DHCSR_HALTED = DHCSR_HALT_BIT | DHCSR_DEBUGEN_BIT |\
+                   DHCSR_STATUS_HALT_BIT | DHCSR_STATUS_ENABLE_BIT
 
     DEMCR_RUN_AFTER_RESET = 0x00000000
     DEMCR_HALT_AFTER_RESET = 0x00000001
@@ -163,10 +166,23 @@ class Stm32():
         self._stlink.set_debugreg32(Stm32.DEMCR_REG, Stm32.DEMCR_HALT_AFTER_RESET)
         self._stlink.set_debugreg32(Stm32.AIRCR_REG, Stm32.AIRCR_SYSRESETREQ)
         self._stlink.get_debugreg32(Stm32.AIRCR_REG)
+        self._dbg.debug('Stm32.core_reset_halt(): DHCSR %08x' %
+                        self._stlink.get_debugreg32(Stm32.DHCSR_REG))
 
     def core_halt(self):
         self._dbg.debug('Stm32.core_halt()')
-        self._stlink.set_debugreg32(Stm32.DHCSR_REG, Stm32.DHCSR_HALT)
+        verbose = self._dbg._verbose
+        if verbose > 2:
+             self._dbg.set_verbose(2)
+        i = 0
+        while((self._stlink.get_debugreg32(Stm32.DHCSR_REG) & Stm32.DHCSR_HALTED) != Stm32.DHCSR_HALTED) :
+            while True:
+                self._stlink.set_debugreg32(Stm32.DHCSR_REG, Stm32.DHCSR_HALT)
+                i += 1
+                if i & 0xff == 0:
+                    break
+        self._dbg.set_verbose(verbose)
+        self._dbg.debug("Halted after %d transactions" % i)
 
     def core_step(self):
         self._dbg.debug('Stm32.core_step()')

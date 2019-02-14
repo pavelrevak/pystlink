@@ -6,6 +6,9 @@ import lib.stlinkv2
 import lib.stm32
 import lib.stm32fp
 import lib.stm32fs
+import lib.stm32l0
+import lib.stm32l4
+import lib.stm32h7
 import lib.stm32devices
 import lib.stlinkex
 import lib.dbg
@@ -67,6 +70,8 @@ examples:
   pystlink.py -r reset:halt set:pc:0x20000010 dump:pc core:step dump:all
   pystlink.py flash:erase:verify:app.bin
   pystlink.py flash:erase flash:verify:0x08010000:boot.bin
+  pystlink.py -n 2
+  pystlink.py -s 
 """
 
 
@@ -80,6 +85,7 @@ class PyStlink():
         self._driver = None
 
     def find_mcus_by_core(self):
+        self._core.core_halt()
         cpuid = self._stlink.get_debugreg32(PyStlink.CPUID_REG)
         if cpuid == 0:
             raise lib.stlinkex.StlinkException('Not connected to CPU')
@@ -173,11 +179,17 @@ class PyStlink():
             self._driver = lib.stm32fp.Stm32FPXL(self._stlink, dbg=self._dbg)
         elif flash_driver == 'STM32FS':
             self._driver = lib.stm32fs.Stm32FS(self._stlink, dbg=self._dbg)
+        elif flash_driver == 'STM32L0':
+            self._driver = lib.stm32l0.Stm32L0(self._stlink, dbg=self._dbg)
+        elif flash_driver == 'STM32L4':
+            self._driver = lib.stm32l4.Stm32L4(self._stlink, dbg=self._dbg)
+        elif flash_driver == 'STM32H7':
+            self._driver = lib.stm32h7.Stm32H7(self._stlink, dbg=self._dbg)
         else:
-            self._driver = lib.stm32.Stm32(self._stlink, dbg=self._dbg)
+            self._driver = self._core
 
     def detect_cpu(self, expected_cpus, unmount=False):
-        self._connector = lib.stlinkusb.StlinkUsbConnector(dbg=self._dbg)
+        self._connector = lib.stlinkusb.StlinkUsbConnector(dbg=self._dbg, serial=self._serial, index = self._index)
         if unmount:
             self._connector.unmount_discovery()
         self._stlink = lib.stlinkv2.Stlink(self._connector, dbg=self._dbg)
@@ -186,6 +198,7 @@ class PyStlink():
         self._dbg.verbose("COREID: %08x" % self._stlink.coreid)
         if self._stlink.coreid == 0:
             raise lib.stlinkex.StlinkException('Not connected to CPU')
+        self._core = lib.stm32.Stm32(self._stlink, dbg=self._dbg)
         self.find_mcus_by_core()
         self._dbg.info("CORE:   %s" % self._mcus_by_core['core'])
         self.find_mcus_by_devid()
@@ -418,10 +431,14 @@ class PyStlink():
         parser.add_argument('-c', '--cpu', action='append', help='set expected CPU type [eg: STM32F051, STM32L4]')
         parser.add_argument('-r', '--no-run', action='store_true', help='do not run core when program end (if core was halted)')
         parser.add_argument('-u', '--no-unmount', action='store_true', help='do not unmount DISCOVERY from ST-Link/V2-1 on OS/X platform')
+        parser.add_argument('-s', '--serial', dest='serial', help='Use Stlink with given serial number')
+        parser.add_argument('-n', '--num-index', type=int, dest='index', default=0, help='Use Stlink with given index')
         group_actions = parser.add_argument_group(title='actions')
         group_actions.add_argument('action', nargs='*', help='actions will be processed sequentially')
         args = parser.parse_args()
         self._dbg = lib.dbg.Dbg(args.verbosity)
+        self._serial = args.serial
+        self._index = args.index
         runtime_status = 0
         try:
             self.detect_cpu(args.cpu, not args.no_unmount)
