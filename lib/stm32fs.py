@@ -4,6 +4,7 @@ import lib.stlinkex
 
 
 class Flash():
+    ITCM_BASE      = 0x00200000
     FLASH_REG_BASE = 0x40023c00
     FLASH_KEYR_REG = FLASH_REG_BASE + 0x04
     FLASH_SR_REG = FLASH_REG_BASE + 0x0c
@@ -20,68 +21,15 @@ class Flash():
     FLASH_CR_PSIZE_X64 = 0x00000300
     FLASH_CR_SNB_BITINDEX = 3
 
-    FLASH_SR_BUSY_BIT = 0x00010000
-
-    # PARAMS
-    # R0: SRC data
-    # R1: DST data
-    # R2: size
-    # R4: STM32_FLASH_SR
-    # R5: FLASH_SR_BUSY_BIT
-    FLASH_WRITER_F4_CODE_X8 = [
-        # write:
-        0x03, 0x78,  # 0x7803    # ldrh r3, [r0]
-        0x0b, 0x70,  # 0x700b    # strh r3, [r1]
-        # test_busy:
-        0x23, 0x68,  # 0x6823    # ldr r3, [r4]
-        0x2b, 0x42,  # 0x422b    # tst r3, r5
-        0xfc, 0xd1,  # 0xd1fc    # bne <test_busy>
-        0x00, 0x2b,  # 0x2b00    # cmp r3, #0
-        0x04, 0xd1,  # 0xd104    # bne <exit>
-        0x01, 0x30,  # 0x3001    # adds r0, #1
-        0x01, 0x31,  # 0x3101    # adds r1, #1
-        0x01, 0x3a,  # 0x3a01    # subs r2, #1
-        0x00, 0x2a,  # 0x2a00    # cmp r2, #0
-        0xf3, 0xd1,  # 0xd1f3    # bne <write>
-        # exit:
-        0x00, 0xbe,  # 0xbe00    # bkpt 0x00
-    ]
-    FLASH_WRITER_F4_CODE_X16 = [
-        # write:
-        0x03, 0x88,  # 0x8803    # ldrh r3, [r0]
-        0x0b, 0x80,  # 0x800b    # strh r3, [r1]
-        # test_busy:
-        0x23, 0x68,  # 0x6823    # ldr r3, [r4]
-        0x2b, 0x42,  # 0x422b    # tst r3, r5
-        0xfc, 0xd1,  # 0xd1fc    # bne <test_busy>
-        0x00, 0x2b,  # 0x2b00    # cmp r3, #0
-        0x04, 0xd1,  # 0xd104    # bne <exit>
-        0x02, 0x30,  # 0x3002    # adds r0, #2
-        0x02, 0x31,  # 0x3102    # adds r1, #2
-        0x02, 0x3a,  # 0x3a02    # subs r2, #2
-        0x00, 0x2a,  # 0x2a00    # cmp r2, #0
-        0xf3, 0xd1,  # 0xd1f3    # bne <write>
-        # exit:
-        0x00, 0xbe,  # 0xbe00    # bkpt 0x00
-    ]
-    FLASH_WRITER_F4_CODE_X32 = [
-        # write:
-        0x03, 0x68,  # 0x6803    # ldr r3, [r0]
-        0x0b, 0x60,  # 0x600b    # str r3, [r1]
-        # test_busy:
-        0x23, 0x68,  # 0x6823    # ldr r3, [r4]
-        0x2b, 0x42,  # 0x422b    # tst r3, r5
-        0xfc, 0xd1,  # 0xd1fc    # bne <test_busy>
-        0x00, 0x2b,  # 0x2b00    # cmp r3, #0
-        0x04, 0xd1,  # 0xd104    # bne <exit>
-        0x04, 0x30,  # 0x3004    # adds r0, #4
-        0x04, 0x31,  # 0x3104    # adds r1, #4
-        0x04, 0x3a,  # 0x3a04    # subs r2, #4
-        0x00, 0x2a,  # 0x2a00    # cmp r2, #0
-        0xf3, 0xd1,  # 0xd1f3    # bne <write>
-        # exit:
-        0x00, 0xbe,  # 0xbe00    # bkpt 0x00
-    ]
+    FLASH_SR_EOP        = 1 <<  0
+    FLASH_SR_OPERR	= 1 <<  1
+    FLASH_SR_WRPERR	= 1 <<  4
+    FLASH_SR_PGAERR     = 1 <<  5
+    FLASH_SR_PGPERR	= 1 <<  6
+    FLASH_SR_ERSERR	= 1 <<  7
+    FLASH_SR_BSY	= 1 << 16
+    FLASH_SR_ERROR_MASK	= FLASH_SR_WRPERR   | FLASH_SR_PGAERR  |\
+			   FLASH_SR_PGPERR |FLASH_SR_ERSERR
 
     VOLTAGE_DEPENDEND_PARAMS = [
         {
@@ -89,19 +37,19 @@ class Flash():
             'max_mass_erase_time': 16,
             'max_erase_time': {16: .5, 32: 1.1, 64: 1.1, 128: 2, 256: 2},
             'FLASH_CR_PSIZE': FLASH_CR_PSIZE_X32,
-            'FLASH_WRITER_CODE': FLASH_WRITER_F4_CODE_X32,
+            'align': 4,
         }, {
             'min_voltage': 2.1,
             'max_mass_erase_time': 22,
             'max_erase_time': {16: .6, 32: 1.4, 64: 1.4, 128: 2.6, 256: 2.6},
             'FLASH_CR_PSIZE': FLASH_CR_PSIZE_X16,
-            'FLASH_WRITER_CODE': FLASH_WRITER_F4_CODE_X16,
-        }, {
+            'align': 2,
+       }, {
             'min_voltage': 1.8,
             'max_mass_erase_time': 32,
             'max_erase_time': {16: .8, 32: 2.4, 64: 2.4, 128: 4, 256: 4},
             'FLASH_CR_PSIZE': FLASH_CR_PSIZE_X8,
-            'FLASH_WRITER_CODE': FLASH_WRITER_F4_CODE_X8,
+            'align': 1,
         }
     ]
 
@@ -164,28 +112,6 @@ class Flash():
                     return
                 sector += 1
 
-    def init_write(self, sram_offset):
-        self._flash_writer_offset = sram_offset
-        self._flash_data_offset = sram_offset + 0x100
-        self._stlink.set_mem8(self._flash_writer_offset, self._params['FLASH_WRITER_CODE'])
-        # set configuration for flash writer
-        self._driver.set_reg('R4', Flash.FLASH_SR_REG)
-        self._driver.set_reg('R5', Flash.FLASH_SR_BUSY_BIT)
-        # enable PG
-        self._stlink.set_debugreg32(Flash.FLASH_CR_REG, Flash.FLASH_CR_PG_BIT | self._params['FLASH_CR_PSIZE'])
-
-    def write(self, addr, block):
-        # if all data are 0xff then will be not written
-        if min(block) == 0xff:
-            return
-        self._stlink.set_mem32(self._flash_data_offset, block)
-        self._driver.set_reg('PC', self._flash_writer_offset)
-        self._driver.set_reg('R0', self._flash_data_offset)
-        self._driver.set_reg('R1', addr)
-        self._driver.set_reg('R2', len(block))
-        self._driver.core_run()
-        self.wait_for_breakpoint(0.2)
-
     def wait_busy(self, wait_time, bargraph_msg=None):
         end_time = time.time() + wait_time * 1.5
         if bargraph_msg:
@@ -194,7 +120,7 @@ class Flash():
             if bargraph_msg:
                 self._dbg.bargraph_update(value=time.time())
             status = self._stlink.get_debugreg32(Flash.FLASH_SR_REG)
-            if not status & Flash.FLASH_SR_BUSY_BIT:
+            if not status & Flash.FLASH_SR_BSY:
                 self.end_of_operation(status)
                 if bargraph_msg:
                     self._dbg.bargraph_done()
@@ -226,26 +152,61 @@ class Stm32FS(lib.stm32.Stm32):
         self._dbg.debug('Stm32FS.flash_write(%s, [data:%dBytes], erase=%s, verify=%s, erase_sizes=%s)' % (('0x%08x' % addr) if addr is not None else 'None', len(data), erase, verify, erase_sizes))
         if addr is None:
             addr = self.FLASH_START
-        if addr % 4:
-            raise lib.stlinkex.StlinkException('Start address is not aligned to word')
-        # align data
-        if len(data) % 4:
-            data.extend([0xff] * (4 - len(data) % 4))
+        if addr < self.FLASH_START and addr >= Flash.AXIM_BASE:
+            addr = Flash.AXIM_BASE + addr - self.FLASH_START
         flash = Flash(self, self._stlink, self._dbg)
         if erase:
             if erase_sizes:
                 flash.erase_sectors(self.FLASH_START, erase_sizes, addr, len(data))
             else:
                 flash.erase_all()
+        status = self._stlink.get_debugreg32(Flash.FLASH_SR_REG)
+        if status & Flash.FLASH_SR_ERROR_MASK:
+            # Try to clear errors
+            self._stlink.set_debugreg32(Flash.FLASH_SR_REG, Flash.FLASH_SR_ERROR_MASK)
+            status = self._stlink.get_debugreg32(Flash.FLASH_SR_REG)
+            if status & Flash.FLASH_SR_ERROR_MASK:
+                raise lib.stlinkex.StlinkException(
+                    'FLASH state error : %08x\n' % status)
+        params =   Flash.get_voltage_dependend_params(self)
+        print('Align %d' % params['align'])
+        self._stlink.set_debugreg32(Flash.FLASH_CR_REG, Flash.FLASH_CR_PG_BIT | params['FLASH_CR_PSIZE'])
         self._dbg.bargraph_start('Writing FLASH', value_min=addr, value_max=addr + len(data))
-        flash.init_write(Stm32FS.SRAM_START)
-        while(data):
-            self._dbg.bargraph_update(value=addr)
-            block = data[:self._stlink.STLINK_MAXIMUM_TRANSFER_SIZE]
-            data = data[self._stlink.STLINK_MAXIMUM_TRANSFER_SIZE:]
-            flash.write(addr, block)
-            if verify and block != self._stlink.get_mem32(addr, len(block)):
-                raise lib.stlinkex.StlinkException('Verify error at block address: 0x%08x' % addr)
-            addr += len(block)
+        # align data
+        if len(data) % params['align']:
+            data.extend([0xff] * (params['align'] - len(data) % params['align']))
+        datablock = data
+        data_addr = addr
+        while datablock:
+            block = datablock[:1024]
+            datablock = datablock[1024:]
+            if min(block) != 0xff:
+                if params['align'] == 4:
+                    self._stlink.set_mem32(data_addr, block)
+                elif params['align'] == 2:
+                    self._stlink.set_mem16(data_addr, block)
+                else :
+                    self._stlink.set_mem8(data_addr, block)
+            data_addr += len(block)
+            self._dbg.bargraph_update(value=data_addr)
+        flash.wait_busy(0.001)
         flash.lock()
         self._dbg.bargraph_done()
+        if status & Flash.FLASH_SR_ERROR_MASK:
+            raise lib.stlinkex.StlinkException(
+                'Error writing FLASH with status: %08x\n' % status)
+
+        if verify:
+            datablock = data
+            data_addr = addr
+            self._dbg.bargraph_start('Verify FLASH ', value_min=addr,
+                                     value_max=addr + len(data))
+            while(datablock):
+                block = datablock[:1024]
+                datablock = datablock[1024:]
+                if block != self._stlink.get_mem32(data_addr, len(block)):
+                    raise lib.stlinkex.StlinkException(
+                        'Verify error at block address: 0x%08x' % data_addr)
+                data_addr += len(block)
+                self._dbg.bargraph_update(value=data_addr)
+            self._dbg.bargraph_done()
