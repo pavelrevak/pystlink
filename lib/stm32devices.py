@@ -652,7 +652,7 @@ DEVICES = [
                 'dev_id': 0x452,
                 'flash_size_reg': 0x1ff07a22,
                 'flash_driver': 'STM32FS',
-                'erase_sizes': (32*1024, 32*1024, 32*1024, 32*1024, 128*1024, 256*1024, 256*1024, 256*1024, ),
+                'erase_sizes': (16*1024, 16*1024, 16*1024, 16*1024, 64*1024, 128*1024, 128*1024, 128*1024, ),
                 'devices': [
                     {'type': 'STM32F722xC', 'flash_size':  256, 'sram_size': 256, 'eeprom_size':  0, 'freq': 216},
                     {'type': 'STM32F722xE', 'flash_size':  512, 'sram_size': 256, 'eeprom_size':  0, 'freq': 216},
