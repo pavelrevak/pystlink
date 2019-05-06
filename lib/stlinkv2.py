@@ -56,6 +56,9 @@ class Stlink():
     STLINK_DEBUG_APIV2_STOP_TRACE_RX = 0x41
     STLINK_DEBUG_APIV2_GET_TRACE_NB = 0x42
     STLINK_DEBUG_APIV2_SWD_SET_FREQ = 0x43
+    STLINK_DEBUG_APIV2_READMEM_16BIT =   0x47
+    STLINK_DEBUG_APIV2_WRITEMEM_16BIT =  0x48
+
     STLINK_DEBUG_ENTER_SWD = 0xa3
 
     STLINK_DEBUG_APIV3_SET_COM_FREQ = 0x61
@@ -295,9 +298,36 @@ class Stlink():
         return self._connector.xfer(cmd, rx_len=size)
 
     def set_mem8(self, addr, data):
-        if len(data) > 64:
-            raise lib.stlinkex.StlinkException('set_mem8: Size for writing is %d but maximum can be 64' % len(data))
-        cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_WRITEMEM_8BIT]
+        datablock = data
+        while(datablock):
+            block = datablock[:64]
+            datablock = datablock[64:]
+            cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_WRITEMEM_8BIT]
+            cmd.extend(list(addr.to_bytes(4, byteorder='little')))
+            cmd.extend(list(len(block).to_bytes(4, byteorder='little')))
+            self._connector.xfer(cmd, block)
+            addr = addr + 64
+
+    def get_mem16(self, addr, size):
+        if addr % 2:
+            raise lib.stlinkex.StlinkException('get_mem16: Address must be in multiples of 2')
+        if len(data) % 2:
+            raise lib.stlinkex.StlinkException('get_mem16: Size must be in multiples of 2')
+        if len(data) > Stlink.STLINK_MAXIMUM_TRANSFER_SIZE:
+            raise lib.stlinkex.StlinkException('get_mem16: Size for writing is %d but maximum can be %d' % (len(data), Stlink.STLINK_MAXIMUM_TRANSFER_SIZE))
+        cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_APIV2_READMEM_16BIT]
+        cmd.extend(list(addr.to_bytes(4, byteorder='little')))
+        cmd.extend(list(size.to_bytes(4, byteorder='little')))
+        return self._connector.xfer(cmd, rx_len=size)
+
+    def set_mem16(self, addr, data):
+        if addr % 2:
+            raise lib.stlinkex.StlinkException('set_mem16: Address must be in multiples of 2')
+        if len(data) % 2:
+            raise lib.stlinkex.StlinkException('set_mem16: Size must be in multiples of 2')
+        if len(data) > Stlink.STLINK_MAXIMUM_TRANSFER_SIZE:
+            raise lib.stlinkex.StlinkException('set_mem16: Size for writing is %d but maximum can be %d' % (len(data), Stlink.STLINK_MAXIMUM_TRANSFER_SIZE))
+        cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_APIV2_WRITEMEM_16BIT]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         cmd.extend(list(len(data).to_bytes(4, byteorder='little')))
         self._connector.xfer(cmd, data=data)
