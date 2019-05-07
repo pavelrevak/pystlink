@@ -66,7 +66,7 @@ class Flash():
         self.unlock()
 
     def unlock(self):
-        self._driver.core_reset_halt()
+        self._driver.core_halt()
         # programing locked
         if self._stlink.get_debugreg32(Flash.FLASH_CR_REG) & Flash.FLASH_CR_LOCK_BIT:
             # unlock keys
