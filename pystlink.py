@@ -49,6 +49,8 @@ list of available actions:
   flash:erase            complete erase FLASH memory aka mass erase
   flash[:erase][:verify]:{file.srec}     erase + flash SREC file + verify
   flash[:erase][:verify][:{addr}]:{file} erase + flash binary file + verify
+  flash:check:{file.srec}     verify flash against SREC file
+  flash:check[:{addr}]:{file} verify flash {at addr} against binary file
 
   reset                  reset core
   reset:halt             reset and halt core
@@ -353,15 +355,20 @@ class PyStlink():
 
     def cmd_flash(self, params):
         erase = False
+        verify = False
+        write = True
         if params[0] == 'erase':
             params = params[1:]
             if not params:
                 self._driver.flash_erase_all()
                 return
             erase = True
+        elif params[0] == 'check':
+            write = False
+            verify = True
+            params = params[1:]
         mem = self.read_file(params[-1])
         params = params[:-1]
-        verify = False
         if params and params[0] == 'verify':
             verify = True
             params = params[1:]
@@ -375,8 +382,10 @@ class PyStlink():
         for addr, data in mem:
             if addr is None:
                 addr = start_addr
-            self._driver.flash_write(addr, data, erase=erase, verify=verify, erase_sizes=self._mcus_by_devid['erase_sizes'])
-
+            if write:
+                self._driver.flash_write(addr, data, erase=erase, erase_sizes=self._mcus_by_devid['erase_sizes'])
+            if verify:
+                 self._driver.flash_verify(addr, data)
     def cmd(self, param):
         cmd = param[0]
         params = param[1:]

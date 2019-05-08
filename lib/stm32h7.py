@@ -207,13 +207,12 @@ class Stm32H7(lib.stm32.Stm32):
         flash.lock(0)
         flash.lock(1)
 
-    def flash_write(self, addr, data, erase=False, verify=False,
-                    erase_sizes=None):
+    def flash_write(self, addr, data, erase=False, erase_sizes=None):
         if addr is None:
             addr = self.FLASH_START
         self._dbg.debug(
-            'Stm32h7.flash_write(%s, [data:%dBytes], erase=%s, verify=%s)' %
-            (addr, len(data), erase, verify))
+            'Stm32h7.flash_write(%s, [data:%dBytes], erase=%s)' %
+            (addr, len(data), erase))
         if addr % 8:
             raise lib.stlinkex.StlinkException(
                 'Start address is not aligned to word')
@@ -266,17 +265,3 @@ class Stm32H7(lib.stm32.Stm32):
         if status & Flash.FLASH_SR_ERROR_MASK:
             raise lib.stlinkex.StlinkException(
                 'Bank 1, Error writing FLASH with status: %08x\n' % status)
-        if verify:
-            datablock = data
-            data_addr = addr
-            self._dbg.bargraph_start('Verify FLASH ', value_min=addr,
-                                     value_max=addr + len(data))
-            while(datablock):
-                block = datablock[:1024]
-                datablock = datablock[1024:]
-                if block != self._stlink.get_mem32(data_addr, len(block)):
-                    raise lib.stlinkex.StlinkException(
-                        'Verify error at block address: 0x%08x' % data_addr)
-                data_addr += len(block)
-                self._dbg.bargraph_update(value=data_addr)
-            self._dbg.bargraph_done()

@@ -148,8 +148,8 @@ class Stm32FS(lib.stm32.Stm32):
         flash.erase_all()
         flash.lock()
 
-    def flash_write(self, addr, data, erase=False, verify=False, erase_sizes=None):
-        self._dbg.debug('Stm32FS.flash_write(%s, [data:%dBytes], erase=%s, verify=%s, erase_sizes=%s)' % (('0x%08x' % addr) if addr is not None else 'None', len(data), erase, verify, erase_sizes))
+    def flash_write(self, addr, data, erase=False, erase_sizes=None):
+        self._dbg.debug('Stm32FS.flash_write(%s, [data:%dBytes], erase=%s, erase_sizes=%s)' % (('0x%08x' % addr) if addr is not None else 'None', len(data), erase, erase_sizes))
         if addr is None:
             addr = self.FLASH_START
         if addr < self.FLASH_START and addr >= Flash.AXIM_BASE:
@@ -195,18 +195,3 @@ class Stm32FS(lib.stm32.Stm32):
         if status & Flash.FLASH_SR_ERROR_MASK:
             raise lib.stlinkex.StlinkException(
                 'Error writing FLASH with status: %08x\n' % status)
-
-        if verify:
-            datablock = data
-            data_addr = addr
-            self._dbg.bargraph_start('Verify FLASH ', value_min=addr,
-                                     value_max=addr + len(data))
-            while(datablock):
-                block = datablock[:1024]
-                datablock = datablock[1024:]
-                if block != self._stlink.get_mem32(data_addr, len(block)):
-                    raise lib.stlinkex.StlinkException(
-                        'Verify error at block address: 0x%08x' % data_addr)
-                data_addr += len(block)
-                self._dbg.bargraph_update(value=data_addr)
-            self._dbg.bargraph_done()
