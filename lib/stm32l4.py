@@ -55,7 +55,7 @@ class Flash():
             else:
                 self._dbg.info('STM32L4[R|S] in dual bank configuration')
                 self._page_size *= 2
-            self.unlock()
+        self.unlock()
 
     def clear_sr(self):
         # clear errors
@@ -64,7 +64,7 @@ class Flash():
 
     def unlock(self):
         self._dbg.debug('unlock start')
-        self._driver.core_reset_halt()
+        self._driver.core_halt()
         self.clear_sr()
         self._stlink.set_debugreg32(Flash.FLASH_CR_REG, Flash.FLASH_CR_LOCK_BIT)
         # Lock first. Double unlock results in error!
@@ -89,7 +89,6 @@ class Flash():
         self._stlink.set_debugreg32(Flash.FLASH_CR_REG, Flash.FLASH_CR_LOCK_BIT)
         cr = self._stlink.get_debugreg32(Flash.FLASH_CR_REG)
         self._dbg.debug('lock cr %08x' % cr)
-        self._driver.core_reset_halt()
 
     def erase_all(self):
         self._dbg.debug('erase_all')
@@ -125,7 +124,7 @@ class Flash():
         self._dbg.verbose('erase_pages from addr %08x for %d byte' %
                           (addr, size))
         page =      (addr - lib.stm32.Stm32.FLASH_START       ) // self._page_size
-        last_page = (addr - lib.stm32.Stm32.FLASH_START + size) // self._page_size
+        last_page = (addr - lib.stm32.Stm32.FLASH_START + size + self._page_size - 1) // self._page_size
         self._dbg.verbose('erase_pages %d to %d' % (page, last_page))
         self._dbg.bargraph_start('Erasing FLASH', value_min=page,
                                  value_max=last_page)
@@ -190,27 +189,27 @@ class Stm32L4(lib.stm32.Stm32):
         if len(data) % 8:
             data.extend([0xff] * (8 - len(data) % 8))
         flash = Flash(self, self._stlink, self._dbg)
+        flash.unlock()
         if erase:
             if erase_sizes:
                 flash.erase_pages(addr, len(data))
             else:
                 flash.erase_all()
+            flash.unlock()
         self._dbg.bargraph_start('Writing FLASH', value_min=addr, value_max=addr + len(data))
-        flash.unlock()
-        datablock = data
-        data_addr = addr
         self._stlink.set_debugreg32(Flash.FLASH_CR_REG, 0)
         self._stlink.set_debugreg32(Flash.FLASH_CR_REG, Flash.FLASH_CR_PG_BIT)
         cr =  self._stlink.get_debugreg32(Flash.FLASH_CR_REG)
         if not cr & Flash.FLASH_CR_PG_BIT:
             raise lib.stlinkex.StlinkException('Flash_Cr not ready for programming: %08x\n' % cr)
-        while datablock:
-            block = datablock[:256]
-            datablock = datablock[256:]
+        while data:
+            block = data[:256]
+            data = data[256:]
+            self._dbg.debug('Stm32l4.flash_write len %s addr %x' % (len(block), addr))
             if min(block) != 0xff:
-                self._stlink.set_mem32(data_addr, block)
-            data_addr += len(block)
-            self._dbg.bargraph_update(value=data_addr)
+                self._stlink.set_mem32(addr, block)
+            addr += len(block)
+            self._dbg.bargraph_update(value=addr)
         flash.wait_busy(0.001)
-        flash.lock()
         self._dbg.bargraph_done()
+        flash.lock()
