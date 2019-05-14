@@ -384,8 +384,12 @@ class PyStlink():
                 addr = start_addr
             if write:
                 self._driver.flash_write(addr, data, erase=erase, erase_sizes=self._mcus_by_devid['erase_sizes'])
+                self._driver.core_reset_halt()
+                time.sleep(0.1)
             if verify:
-                 self._driver.flash_verify(addr, data)
+                self._driver.core_halt()
+                self._driver.flash_verify(addr, data)
+        self._driver.core_run()
     def cmd(self, param):
         cmd = param[0]
         params = param[1:]
