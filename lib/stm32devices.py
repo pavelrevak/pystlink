@@ -520,6 +520,17 @@ DEVICES = [
                 ],
             },
             {
+                'dev_id': 0x464,
+                'flash_size_reg': 0x1fff75e0,
+                'flash_driver': 'STM32L4',
+                'erase_sizes': (2 * 1024,),
+                'devices': [
+                    {'type': 'STM32L412x8', 'flash_size':   64, 'sram_size': 40, 'eeprom_size':  0, 'freq':  80},
+                    {'type': 'STM32L412xB', 'flash_size':  128, 'sram_size': 40, 'eeprom_size':  0, 'freq':  80},
+                    {'type': 'STM32L422xB', 'flash_size':  128, 'sram_size': 40, 'eeprom_size':  0, 'freq':  80},
+                ],
+            },
+            {
                 'dev_id': 0x435,
                 'flash_size_reg': 0x1fff75e0,
                 'flash_driver': 'STM32L4',
