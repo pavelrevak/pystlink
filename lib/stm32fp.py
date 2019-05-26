@@ -39,8 +39,14 @@ class Flash():
             raise lib.stlinkex.StlinkException('Supply voltage is %.2fV, but minimum for FLASH program or erase is 2.0V' % self._stlink.target_voltage)
         self.unlock()
 
+    def clear_sr(self):
+        # clear errors
+        sr = self._stlink.get_debugreg32(Flash.FLASH_SR_REG)
+        self._stlink.set_debugreg32(Flash.FLASH_SR_REG, sr)
+
     def unlock(self):
         self._driver.core_halt()
+        self.clear_sr()
         # programing locked
         if self._stlink.get_debugreg32(Flash.FLASH_CR_REG) & Flash.FLASH_CR_LOCK_BIT:
             # unlock keys
