@@ -116,8 +116,8 @@ class Stlink():
         self._ver_jtag = (ver >> 6) & 0x3f
         self._ver_swim = ver & 0x3f if dev_ver == 'V2' else None
         self._ver_mass = ver & 0x3f if dev_ver == 'V2-1' else None
-        self._ver_api = 3 if dev_ver == 'V3' else 2 if self._ver_jtag > 11 else 1
-        if dev_ver == 'V3':
+        self._ver_api = 3 if dev_ver == 'V3' or dev_ver == 'V3E' else 2 if self._ver_jtag > 11 else 1
+        if dev_ver == 'V3' or dev_ver == 'V3E':
             rx_v3 = self._connector.xfer([Stlink.STLINK_APIV3_GET_VERSION_EX, 0x80], rx_len=16)
             self._ver_swim = int(rx_v3[1])
             self._ver_jtag = int(rx_v3[2])
@@ -128,13 +128,17 @@ class Stlink():
             self._ver_str += "M%d" % self._ver_mass
             self._ver_str += "B%d" % self._ver_bridge
             self._ver_str += "S%d" % self._ver_swim
+        if dev_ver == 'V3E':
+            self._ver_str += "M%d" % self._ver_mass
         if dev_ver == 'V2':
             self._ver_str += "S%d" % self._ver_swim
         if dev_ver == 'V2-1':
             self._ver_str += "M%d" % self._ver_mass
         if self.ver_api == 1:
             raise self._dbg.warning("ST-Link/%s is not supported, please upgrade firmware." % self._ver_str)
-        if self.ver_jtag < 21 and not dev_ver == 'V3':
+        if self.ver_jtag < 21 and self._ver_api == 2:
+            self._dbg.warning("ST-Link/%s is not recent firmware, please upgrade first - functionality is not guaranteed." % self._ver_str)
+        if self.ver_jtag < 3 and self._ver_api == 3:
             self._dbg.warning("ST-Link/%s is not recent firmware, please upgrade first - functionality is not guaranteed." % self._ver_str)
 
     @property
