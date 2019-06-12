@@ -679,8 +679,11 @@ DEVICES = [
                 'flash_driver': 'STM32H7',
                 'erase_sizes': (128*1024,),
                 'devices': [
-                    {'type': 'STM32H743xI', 'flash_size': 2048, 'sram_size': 1024, 'eeprom_size':  0, 'freq': 400},
-                    {'type': 'STM32H753xI', 'flash_size': 2048, 'sram_size': 1024, 'eeprom_size':  0, 'freq': 400},
+                    {'type': 'STM32H743xI', 'flash_size': 2048, 'sram_size': 1024, 'eeprom_size':  0, 'freq': 480},
+                    {'type': 'STM32H753xI', 'flash_size': 2048, 'sram_size': 1024, 'eeprom_size':  0, 'freq': 480},
+                    {'type': 'STM32H750xI', 'flash_size':  128, 'sram_size': 1024, 'eeprom_size':  0, 'freq': 480},
+                    {'type': 'STM32H745xI', 'flash_size': 2048, 'sram_size': 1024, 'eeprom_size':  0, 'freq': 480},
+                    {'type': 'STM32H755xI', 'flash_size': 2048, 'sram_size': 1024, 'eeprom_size':  0, 'freq': 480},
                 ]
             },
         ]
