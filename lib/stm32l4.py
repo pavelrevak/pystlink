@@ -171,7 +171,7 @@ class Flash():
 
 # support all STM32L4 and G0 MCUs with page size access to FLASH
 class Stm32L4(lib.stm32.Stm32):
-    def flash_erase_all(self):
+    def flash_erase_all(self, flash_size):
         self._dbg.debug('Stm32L4.flash_erase_all()')
         flash = Flash(self, self._stlink, self._dbg)
         flash.erase_all()

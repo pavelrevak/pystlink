@@ -360,7 +360,8 @@ class PyStlink():
         if params[0] == 'erase':
             params = params[1:]
             if not params:
-                self._driver.flash_erase_all()
+                self._flash_size = self._stlink.get_debugreg16(self._mcus_by_devid['flash_size_reg'])
+                self._driver.flash_erase_all(self._flash_size)
                 return
             erase = True
         elif params[0] == 'check':

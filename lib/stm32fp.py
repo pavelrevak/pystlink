@@ -122,7 +122,7 @@ class Stm32FP(lib.stm32.Stm32):
         flash.erase_all()
         flash.lock()
 
-    def flash_erase_all(self):
+    def flash_erase_all(self, flash_size):
         self._dbg.debug('Stm32FP.flash_erase_all()')
         self._flash_erase_all()
 
@@ -163,7 +163,7 @@ class Stm32FP(lib.stm32.Stm32):
 class Stm32FPXL(Stm32FP):
     BANK_SIZE = 512 * 1024
 
-    def flash_erase_all(self):
+    def flash_erase_all(self, flash_size):
         self._dbg.debug('Stm32F1.flash_erase_all()')
         self._flash_erase_all(bank=0)
         self._flash_erase_all(bank=1)

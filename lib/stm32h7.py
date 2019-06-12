@@ -200,7 +200,7 @@ class Flash():
             raise lib.stlinkex.StlinkException('Error writing FLASH with status (FLASH_SR) %08x' % status)
 
 class Stm32H7(lib.stm32.Stm32):
-    def flash_erase_all(self):
+    def flash_erase_all(self, flash_size):
         self._dbg.debug('Stm32H7.flash_erase_all()')
         flash = Flash(self, self._stlink, self._dbg)
         flash.erase_all()

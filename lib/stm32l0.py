@@ -139,14 +139,14 @@ class Flash():
 
 
 class Stm32L0(lib.stm32.Stm32):
-    def flash_erase_all(self):
+    def flash_erase_all(self, flash_size):
         # Mass erase is only possible by setting and removing flash
         # write protection. This will also erase EEPROM!
         # Use page erase instead
 
         self._dbg.debug('Stm32L0.flash_erase_all')
         flash = Flash(self, self._stlink, self._dbg)
-        flash.erase_pages(lib.stm32.Stm32.FLASH_START, flash_size * 1024);
+        flash.erase_pages(lib.stm32.Stm32.FLASH_START, flash_size);
         flash.lock()
 
     def flash_write(self, addr, data, erase=False, erase_sizes=None):

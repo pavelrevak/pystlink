@@ -196,7 +196,7 @@ class Stm32():
         self._dbg.debug('Stm32.core_nodebug()')
         self._stlink.set_debugreg32(Stm32.DHCSR_REG, Stm32.DHCSR_DEBUGDIS)
 
-    def flash_erase_all(self):
+    def flash_erase_all(self, flash_size):
         self._dbg.debug('Stm32.flash_mass_erase()')
         raise lib.stlinkex.StlinkException('Erasing FLASH is not implemented for this MCU')
 
