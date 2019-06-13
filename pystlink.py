@@ -122,7 +122,7 @@ class PyStlink():
             if mcu['flash_size'] == self._flash_size:
                 self._mcus.append(mcu)
         if not self._mcus:
-            raise lib.stlinkex.StlinkException('Connected CPU with DEV_ID: 0x%03x and FLASH size: %dKB is not supported' % (
+            raise lib.stlinkex.StlinkException('Connected CPU with DEV_ID: 0x%03x and FLASH size: %dKB is not supported. Check Protection' % (
                 self._mcus_by_devid['dev_id'], self._flash_size
             ))
 
