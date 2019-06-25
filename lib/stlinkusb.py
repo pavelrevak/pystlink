@@ -1,6 +1,7 @@
 import usb.core
 import usb.util
 import lib.stlinkex
+import re
 
 
 class StlinkUsbConnector():
@@ -33,9 +34,13 @@ class StlinkUsbConnector():
         # 1.0.0b2 and 1.0.0. Try the old signature first, if that fails try
         # the newer one.
         try:
-            return usb.util.get_string(self._dev, 255, self._dev.iSerialNumber)
+            serial = usb.util.get_string(self._dev, 255, self._dev.iSerialNumber)
         except (usb.core.USBError, ValueError):
-            return usb.util.get_string(self._dev, self._dev.iSerialNumber)
+            serial = usb.util.get_string(self._dev, self._dev.iSerialNumber)
+        if serial != None:
+            if re.search("[0-9a-fA-f]+", serial).span()[1] != 24:
+                serial = ''.join(["%.2x" % ord(c) for c in list(serial)])
+        return serial
 
     def __init__(self, dbg=None, serial = None, index = 0):
         self._dbg = dbg
