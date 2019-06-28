@@ -622,6 +622,28 @@ DEVICES = [
                     {'type': 'STM32WB55xG', 'flash_size': 1024, 'sram_size': 256, 'eeprom_size':  0, 'freq':  64},
                 ],
             },
+            {
+                'dev_id': 0x468,
+                'flash_size_reg': 0x1fff75e0,
+                'flash_driver': 'STM32L4',
+                'erase_sizes': (2 * 1024, ),
+                'devices': [
+                    {'type': 'STM32G43xx6', 'flash_size':   32, 'sram_size':  32, 'eeprom_size':  0, 'freq': 170},
+                    {'type': 'STM32G43xx8', 'flash_size':   64, 'sram_size':  32, 'eeprom_size':  0, 'freq': 170},
+                    {'type': 'STM32G43xxB', 'flash_size':  128, 'sram_size':  32, 'eeprom_size':  0, 'freq': 170},
+                ],
+            },
+            {
+                'dev_id': 0x469,
+                'flash_size_reg': 0x1fff75e0,
+                'flash_driver': 'STM32L4',
+                'erase_sizes': (2 * 1024, ),
+                'devices': [
+                    {'type': 'STM32G47xxB', 'flash_size':  128, 'sram_size': 128, 'eeprom_size':  0, 'freq': 170},
+                    {'type': 'STM32G47xxC', 'flash_size':  256, 'sram_size': 128, 'eeprom_size':  0, 'freq': 170},
+                    {'type': 'STM32G47xxE', 'flash_size':  512, 'sram_size': 128, 'eeprom_size':  0, 'freq': 170},
+                ],
+            },
         ],
     },
     {
