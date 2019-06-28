@@ -116,8 +116,8 @@ class Stlink():
         self._ver_jtag = (ver >> 6) & 0x3f
         self._ver_swim = ver & 0x3f if dev_ver == 'V2' else None
         self._ver_mass = ver & 0x3f if dev_ver == 'V2-1' else None
-        self._ver_api = 3 if dev_ver == 'V3' or dev_ver == 'V3E' else 2 if self._ver_jtag > 11 else 1
-        if dev_ver == 'V3' or dev_ver == 'V3E':
+        self._ver_api = 3 if dev_ver[0:2] == 'V3' else 2 if self._ver_jtag > 11 else 1
+        if dev_ver[0:2] == 'V3':
             rx_v3 = self._connector.xfer([Stlink.STLINK_APIV3_GET_VERSION_EX, 0x80], rx_len=16)
             self._ver_swim = int(rx_v3[1])
             self._ver_jtag = int(rx_v3[2])
