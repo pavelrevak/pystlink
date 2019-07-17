@@ -110,8 +110,8 @@ class Flash():
 
     def erase_all(self):
         self._dbg.debug('erase_all')
-        clear_sr(0)
-        clear_sr(1)
+        self.clear_sr(0)
+        self.clear_sr(1)
         cr = Flash.FLASH_CR_PSIZE32
         self._stlink.set_debugreg32(Flash.FLASH_CR_REGS[0], cr)
         self._stlink.set_debugreg32(Flash.FLASH_CR_REGS[1], cr)
@@ -120,10 +120,10 @@ class Flash():
 
     def erase_bank(self, bank):
         self._dbg.debug('erase_bank %d' % bank)
-        clear_sr(bank)
-        cr = Flash.FLASH_CR_PSIZE32 | Flash.FLASH_OPTCR_BER
+        self.clear_sr(bank)
+        cr = Flash.FLASH_CR_PSIZE32 | Flash.FLASH_CR_BER
         self._stlink.set_debugreg32(Flash.FLASH_CR_REGS[bank], cr)
-        cr |= Flash.FLASH_OPTCR_START
+        cr |= Flash.FLASH_CR_START
         self._stlink.set_debugreg32(Flash.FLASH_CR_REGS[bank], cr)
         self.wait_busy(12, bank=bank, check_qw=True)
 
@@ -159,13 +159,13 @@ class Flash():
         sector     //= self._sector_size
         end_sector //= self._sector_size
         if sector == 0 and end_sector >= 8:
-            erase_bank(0)
+            self.erase_bank(0)
             addr += 8* self._sector_size
             self._dbg.bargraph_update(value=addr)
             sector = 8
         while sector <= end_sector:
             if sector == 8 and end_sector >= 16:
-                erase_bank(1)
+                self.erase_bank(1)
                 addr += 8* self._sector_size
                 self._dbg.bargraph_update(value=addr)
                 break
