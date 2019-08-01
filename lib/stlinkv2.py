@@ -335,3 +335,5 @@ class Stlink():
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         cmd.extend(list(len(data).to_bytes(4, byteorder='little')))
         self._connector.xfer(cmd, data=data)
+    def set_nrst(self, action):
+        self._connector.xfer([Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_APIV2_DRIVE_NRST, action], rx_len=2)

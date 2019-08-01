@@ -87,7 +87,10 @@ class PyStlink():
         self._driver = None
 
     def find_mcus_by_core(self):
-        self._core.core_halt()
+        if (self._hard):
+            self._core.core_hard_reset_halt()
+        else:
+            self._core.core_halt()
         cpuid = self._stlink.get_debugreg32(PyStlink.CPUID_REG)
         if cpuid == 0:
             raise lib.stlinkex.StlinkException('Not connected to CPU')
@@ -447,12 +450,14 @@ class PyStlink():
         parser.add_argument('-u', '--no-unmount', action='store_true', help='do not unmount DISCOVERY from ST-Link/V2-1 on OS/X platform')
         parser.add_argument('-s', '--serial', dest='serial', help='Use Stlink with given serial number')
         parser.add_argument('-n', '--num-index', type=int, dest='index', default=0, help='Use Stlink with given index')
+        parser.add_argument('-H', '--hard', action='store_true', help='Reset device with NRST')
         group_actions = parser.add_argument_group(title='actions')
         group_actions.add_argument('action', nargs='*', help='actions will be processed sequentially')
         args = parser.parse_args()
         self._dbg = lib.dbg.Dbg(args.verbosity)
         self._serial = args.serial
         self._index = args.index
+        self._hard = args.hard
         runtime_status = 0
         try:
             self.detect_cpu(args.cpu, not args.no_unmount)
