@@ -56,6 +56,9 @@ class Stlink():
     STLINK_DEBUG_APIV2_STOP_TRACE_RX = 0x41
     STLINK_DEBUG_APIV2_GET_TRACE_NB = 0x42
     STLINK_DEBUG_APIV2_SWD_SET_FREQ = 0x43
+    STLINK_DEBUG_APIV2_READMEM_16BIT =   0x47
+    STLINK_DEBUG_APIV2_WRITEMEM_16BIT =  0x48
+
     STLINK_DEBUG_ENTER_SWD = 0xa3
 
     STLINK_DEBUG_APIV3_SET_COM_FREQ = 0x61
@@ -113,8 +116,8 @@ class Stlink():
         self._ver_jtag = (ver >> 6) & 0x3f
         self._ver_swim = ver & 0x3f if dev_ver == 'V2' else None
         self._ver_mass = ver & 0x3f if dev_ver == 'V2-1' else None
-        self._ver_api = 3 if dev_ver == 'V3' else 2 if self._ver_jtag > 11 else 1
-        if dev_ver == 'V3':
+        self._ver_api = 3 if dev_ver[0:2] == 'V3' else 2 if self._ver_jtag > 11 else 1
+        if dev_ver[0:2] == 'V3':
             rx_v3 = self._connector.xfer([Stlink.STLINK_APIV3_GET_VERSION_EX, 0x80], rx_len=16)
             self._ver_swim = int(rx_v3[1])
             self._ver_jtag = int(rx_v3[2])
@@ -125,13 +128,17 @@ class Stlink():
             self._ver_str += "M%d" % self._ver_mass
             self._ver_str += "B%d" % self._ver_bridge
             self._ver_str += "S%d" % self._ver_swim
+        if dev_ver == 'V3E':
+            self._ver_str += "M%d" % self._ver_mass
         if dev_ver == 'V2':
             self._ver_str += "S%d" % self._ver_swim
         if dev_ver == 'V2-1':
             self._ver_str += "M%d" % self._ver_mass
         if self.ver_api == 1:
             raise self._dbg.warning("ST-Link/%s is not supported, please upgrade firmware." % self._ver_str)
-        if self.ver_jtag < 21 and not dev_ver == 'V3':
+        if self.ver_jtag < 21 and self._ver_api == 2:
+            self._dbg.warning("ST-Link/%s is not recent firmware, please upgrade first - functionality is not guaranteed." % self._ver_str)
+        if self.ver_jtag < 3 and self._ver_api == 3:
             self._dbg.warning("ST-Link/%s is not recent firmware, please upgrade first - functionality is not guaranteed." % self._ver_str)
 
     @property
@@ -295,9 +302,38 @@ class Stlink():
         return self._connector.xfer(cmd, rx_len=size)
 
     def set_mem8(self, addr, data):
-        if len(data) > 64:
-            raise lib.stlinkex.StlinkException('set_mem8: Size for writing is %d but maximum can be 64' % len(data))
-        cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_WRITEMEM_8BIT]
+        datablock = data
+        while(datablock):
+            block = datablock[:64]
+            datablock = datablock[64:]
+            cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_WRITEMEM_8BIT]
+            cmd.extend(list(addr.to_bytes(4, byteorder='little')))
+            cmd.extend(list(len(block).to_bytes(4, byteorder='little')))
+            self._connector.xfer(cmd, block)
+            addr = addr + 64
+
+    def get_mem16(self, addr, size):
+        if addr % 2:
+            raise lib.stlinkex.StlinkException('get_mem16: Address must be in multiples of 2')
+        if len(data) % 2:
+            raise lib.stlinkex.StlinkException('get_mem16: Size must be in multiples of 2')
+        if len(data) > Stlink.STLINK_MAXIMUM_TRANSFER_SIZE:
+            raise lib.stlinkex.StlinkException('get_mem16: Size for writing is %d but maximum can be %d' % (len(data), Stlink.STLINK_MAXIMUM_TRANSFER_SIZE))
+        cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_APIV2_READMEM_16BIT]
+        cmd.extend(list(addr.to_bytes(4, byteorder='little')))
+        cmd.extend(list(size.to_bytes(4, byteorder='little')))
+        return self._connector.xfer(cmd, rx_len=size)
+
+    def set_mem16(self, addr, data):
+        if addr % 2:
+            raise lib.stlinkex.StlinkException('set_mem16: Address must be in multiples of 2')
+        if len(data) % 2:
+            raise lib.stlinkex.StlinkException('set_mem16: Size must be in multiples of 2')
+        if len(data) > Stlink.STLINK_MAXIMUM_TRANSFER_SIZE:
+            raise lib.stlinkex.StlinkException('set_mem16: Size for writing is %d but maximum can be %d' % (len(data), Stlink.STLINK_MAXIMUM_TRANSFER_SIZE))
+        cmd = [Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_APIV2_WRITEMEM_16BIT]
         cmd.extend(list(addr.to_bytes(4, byteorder='little')))
         cmd.extend(list(len(data).to_bytes(4, byteorder='little')))
         self._connector.xfer(cmd, data=data)
+    def set_nrst(self, action):
+        self._connector.xfer([Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_APIV2_DRIVE_NRST, action], rx_len=2)

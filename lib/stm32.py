@@ -162,10 +162,19 @@ class Stm32():
 
     def core_reset_halt(self):
         self._dbg.debug('Stm32.core_reset_halt()')
-        self._stlink.set_debugreg32(Stm32.DHCSR_REG, Stm32.DHCSR_HALT)
         self._stlink.set_debugreg32(Stm32.DEMCR_REG, Stm32.DEMCR_HALT_AFTER_RESET)
         self._stlink.set_debugreg32(Stm32.AIRCR_REG, Stm32.AIRCR_SYSRESETREQ)
+        self.core_halt()
         self._stlink.get_debugreg32(Stm32.AIRCR_REG)
+        self._dbg.debug('Stm32.core_reset_halt(): DHCSR %08x' %
+                        self._stlink.get_debugreg32(Stm32.DHCSR_REG))
+
+    def core_hard_reset_halt(self):
+        self._dbg.debug('Stm32.core_hard_reset_halt()')
+        self._stlink.set_nrst(0)
+        self._stlink.set_debugreg32(Stm32.DEMCR_REG, Stm32.DEMCR_HALT_AFTER_RESET)
+        self._stlink.set_nrst(1)
+        self.core_halt()
         self._dbg.debug('Stm32.core_reset_halt(): DHCSR %08x' %
                         self._stlink.get_debugreg32(Stm32.DHCSR_REG))
 
@@ -196,10 +205,37 @@ class Stm32():
         self._dbg.debug('Stm32.core_nodebug()')
         self._stlink.set_debugreg32(Stm32.DHCSR_REG, Stm32.DHCSR_DEBUGDIS)
 
-    def flash_erase_all(self):
+    def flash_erase_all(self, flash_size):
         self._dbg.debug('Stm32.flash_mass_erase()')
         raise lib.stlinkex.StlinkException('Erasing FLASH is not implemented for this MCU')
 
     def flash_write(self, addr, data, erase=False, verify=False, erase_sizes=None):
         self._dbg.debug('Stm32.flash_write(%s, [data:%dBytes], erase=%s, verify=%s, erase_sizes=%s)' % (('0x%08x' % addr) if addr is not None else 'None', len(data), erase, verify, erase_sizes))
         raise lib.stlinkex.StlinkException('Programing FLASH is not implemented for this MCU')
+
+    def flash_verify(self, addr, data):
+        self._dbg.debug('Stm32.flash_verify(%s, [data:%dBytes])' % (('0x%08x' % addr) if addr is not None else 'None', len(data)))
+        length = len(data)
+        self._dbg.bargraph_start('Verify FLASH ', value_min=addr, value_max=addr + len(data))
+        if (addr & 1):
+            uneven = addr & 3
+            block = data[:uneven]
+            data = data[uneven:]
+            if block != self._stlink.get_mem8(addr, uneven):
+                raise lib.stlinkex.StlinkException('Verify error at non-aligned block address: 0x%08x' % addr)
+            addr += uneven
+        while(data):
+            block = data[:1024]
+            data = data[1024:]
+            if block != self._stlink.get_mem32(addr, len(block)):
+                raise lib.stlinkex.StlinkException('Verify error at block address: 0x%08x' % addr)
+            addr += len(block)
+            self._dbg.bargraph_update(value=addr)
+        if (len(data) & 1):
+            remainder = len(data) & 3
+            block = data[:remainder]
+            block = block[remainder:]
+            if block != self._stlink.get_mem8(addr, remainder):
+                raise lib.stlinkex.StlinkException('Verify error at block address at non-aligned length: 0x%08x' % addr)
+            addr += remainder
+        self._dbg.bargraph_done()

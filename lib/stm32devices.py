@@ -470,7 +470,7 @@ DEVICES = [
                 'dev_id': 0x421,
                 'flash_size_reg': 0x1fff7a22,
                 'flash_driver': 'STM32FS',
-                'erase_sizes': (16*1024, 16*1024, 16*1024, 16*1024, 64*1024, 128*1024, 128*1024, 128*1024, 128*1024, 128*1024, 128*1024, 128*1024, ),
+                'erase_sizes': (16*1024, 16*1024, 16*1024, 16*1024, 64*1024, 128*1024, 128*1024, 128*1024, ),
                 'devices': [
                     {'type': 'STM32F446xC', 'flash_size':  256, 'sram_size': 128, 'eeprom_size':  0, 'freq': 180},
                     {'type': 'STM32F446xE', 'flash_size':  512, 'sram_size': 128, 'eeprom_size':  0, 'freq': 180},
@@ -517,6 +517,17 @@ DEVICES = [
                     {'type': 'STM32F469xI', 'flash_size': 2048, 'sram_size': 384, 'eeprom_size':  0, 'freq': 180},
                     {'type': 'STM32F479xG', 'flash_size': 1024, 'sram_size': 384, 'eeprom_size':  0, 'freq': 180},
                     {'type': 'STM32F479xI', 'flash_size': 2048, 'sram_size': 384, 'eeprom_size':  0, 'freq': 180},
+                ],
+            },
+            {
+                'dev_id': 0x464,
+                'flash_size_reg': 0x1fff75e0,
+                'flash_driver': 'STM32L4',
+                'erase_sizes': (2 * 1024,),
+                'devices': [
+                    {'type': 'STM32L412x8', 'flash_size':   64, 'sram_size': 40, 'eeprom_size':  0, 'freq':  80},
+                    {'type': 'STM32L412xB', 'flash_size':  128, 'sram_size': 40, 'eeprom_size':  0, 'freq':  80},
+                    {'type': 'STM32L422xB', 'flash_size':  128, 'sram_size': 40, 'eeprom_size':  0, 'freq':  80},
                 ],
             },
             {
@@ -611,6 +622,28 @@ DEVICES = [
                     {'type': 'STM32WB55xG', 'flash_size': 1024, 'sram_size': 256, 'eeprom_size':  0, 'freq':  64},
                 ],
             },
+            {
+                'dev_id': 0x468,
+                'flash_size_reg': 0x1fff75e0,
+                'flash_driver': 'STM32L4',
+                'erase_sizes': (2 * 1024, ),
+                'devices': [
+                    {'type': 'STM32G43xx6', 'flash_size':   32, 'sram_size':  32, 'eeprom_size':  0, 'freq': 170},
+                    {'type': 'STM32G43xx8', 'flash_size':   64, 'sram_size':  32, 'eeprom_size':  0, 'freq': 170},
+                    {'type': 'STM32G43xxB', 'flash_size':  128, 'sram_size':  32, 'eeprom_size':  0, 'freq': 170},
+                ],
+            },
+            {
+                'dev_id': 0x469,
+                'flash_size_reg': 0x1fff75e0,
+                'flash_driver': 'STM32L4',
+                'erase_sizes': (2 * 1024, ),
+                'devices': [
+                    {'type': 'STM32G47xxB', 'flash_size':  128, 'sram_size': 128, 'eeprom_size':  0, 'freq': 170},
+                    {'type': 'STM32G47xxC', 'flash_size':  256, 'sram_size': 128, 'eeprom_size':  0, 'freq': 170},
+                    {'type': 'STM32G47xxE', 'flash_size':  512, 'sram_size': 128, 'eeprom_size':  0, 'freq': 170},
+                ],
+            },
         ],
     },
     {
@@ -652,7 +685,7 @@ DEVICES = [
                 'dev_id': 0x452,
                 'flash_size_reg': 0x1ff07a22,
                 'flash_driver': 'STM32FS',
-                'erase_sizes': (32*1024, 32*1024, 32*1024, 32*1024, 128*1024, 256*1024, 256*1024, 256*1024, ),
+                'erase_sizes': (16*1024, 16*1024, 16*1024, 16*1024, 64*1024, 128*1024, 128*1024, 128*1024, ),
                 'devices': [
                     {'type': 'STM32F722xC', 'flash_size':  256, 'sram_size': 256, 'eeprom_size':  0, 'freq': 216},
                     {'type': 'STM32F722xE', 'flash_size':  512, 'sram_size': 256, 'eeprom_size':  0, 'freq': 216},
@@ -668,8 +701,11 @@ DEVICES = [
                 'flash_driver': 'STM32H7',
                 'erase_sizes': (128*1024,),
                 'devices': [
-                    {'type': 'STM32H743xI', 'flash_size': 2048, 'sram_size': 1024, 'eeprom_size':  0, 'freq': 400},
-                    {'type': 'STM32H753xI', 'flash_size': 2048, 'sram_size': 1024, 'eeprom_size':  0, 'freq': 400},
+                    {'type': 'STM32H743xI', 'flash_size': 2048, 'sram_size': 1024, 'eeprom_size':  0, 'freq': 480},
+                    {'type': 'STM32H753xI', 'flash_size': 2048, 'sram_size': 1024, 'eeprom_size':  0, 'freq': 480},
+                    {'type': 'STM32H750xI', 'flash_size':  128, 'sram_size': 1024, 'eeprom_size':  0, 'freq': 480},
+                    {'type': 'STM32H745xI', 'flash_size': 2048, 'sram_size': 1024, 'eeprom_size':  0, 'freq': 480},
+                    {'type': 'STM32H755xI', 'flash_size': 2048, 'sram_size': 1024, 'eeprom_size':  0, 'freq': 480},
                 ]
             },
         ]

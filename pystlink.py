@@ -49,6 +49,8 @@ list of available actions:
   flash:erase            complete erase FLASH memory aka mass erase
   flash[:erase][:verify]:{file.srec}     erase + flash SREC file + verify
   flash[:erase][:verify][:{addr}]:{file} erase + flash binary file + verify
+  flash:check:{file.srec}     verify flash against SREC file
+  flash:check[:{addr}]:{file} verify flash {at addr} against binary file
 
   reset                  reset core
   reset:halt             reset and halt core
@@ -85,7 +87,10 @@ class PyStlink():
         self._driver = None
 
     def find_mcus_by_core(self):
-        self._core.core_halt()
+        if (self._hard):
+            self._core.core_hard_reset_halt()
+        else:
+            self._core.core_halt()
         cpuid = self._stlink.get_debugreg32(PyStlink.CPUID_REG)
         if cpuid == 0:
             raise lib.stlinkex.StlinkException('Not connected to CPU')
@@ -120,7 +125,7 @@ class PyStlink():
             if mcu['flash_size'] == self._flash_size:
                 self._mcus.append(mcu)
         if not self._mcus:
-            raise lib.stlinkex.StlinkException('Connected CPU with DEV_ID: 0x%03x and FLASH size: %dKB is not supported' % (
+            raise lib.stlinkex.StlinkException('Connected CPU with DEV_ID: 0x%03x and FLASH size: %dKB is not supported. Check Protection' % (
                 self._mcus_by_devid['dev_id'], self._flash_size
             ))
 
@@ -353,15 +358,21 @@ class PyStlink():
 
     def cmd_flash(self, params):
         erase = False
+        verify = False
+        write = True
         if params[0] == 'erase':
             params = params[1:]
             if not params:
-                self._driver.flash_erase_all()
+                self._flash_size = self._stlink.get_debugreg16(self._mcus_by_devid['flash_size_reg'])
+                self._driver.flash_erase_all(self._flash_size)
                 return
             erase = True
+        elif params[0] == 'check':
+            write = False
+            verify = True
+            params = params[1:]
         mem = self.read_file(params[-1])
         params = params[:-1]
-        verify = False
         if params and params[0] == 'verify':
             verify = True
             params = params[1:]
@@ -375,8 +386,14 @@ class PyStlink():
         for addr, data in mem:
             if addr is None:
                 addr = start_addr
-            self._driver.flash_write(addr, data, erase=erase, verify=verify, erase_sizes=self._mcus_by_devid['erase_sizes'])
-
+            if write:
+                self._driver.flash_write(addr, data, erase=erase, erase_sizes=self._mcus_by_devid['erase_sizes'])
+                self._driver.core_reset_halt()
+                time.sleep(0.1)
+            if verify:
+                self._driver.core_halt()
+                self._driver.flash_verify(addr, data)
+        self._driver.core_run()
     def cmd(self, param):
         cmd = param[0]
         params = param[1:]
@@ -433,12 +450,14 @@ class PyStlink():
         parser.add_argument('-u', '--no-unmount', action='store_true', help='do not unmount DISCOVERY from ST-Link/V2-1 on OS/X platform')
         parser.add_argument('-s', '--serial', dest='serial', help='Use Stlink with given serial number')
         parser.add_argument('-n', '--num-index', type=int, dest='index', default=0, help='Use Stlink with given index')
+        parser.add_argument('-H', '--hard', action='store_true', help='Reset device with NRST')
         group_actions = parser.add_argument_group(title='actions')
         group_actions.add_argument('action', nargs='*', help='actions will be processed sequentially')
         args = parser.parse_args()
         self._dbg = lib.dbg.Dbg(args.verbosity)
         self._serial = args.serial
         self._index = args.index
+        self._hard = args.hard
         runtime_status = 0
         try:
             self.detect_cpu(args.cpu, not args.no_unmount)
