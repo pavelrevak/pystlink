@@ -25,6 +25,32 @@ class Flash():
     FLASH_SR_WRPRTERR_BIT = 0x00000010
     FLASH_SR_EOP_BIT = 0x00000020
 
+    # PARAMS
+    # R0: SRC data
+    # R1: DST data
+    # R2: size
+    # R4: STM32_FLASH_SR
+    # R5: FLASH_SR_BUSY_BIT
+    # R6: FLASH_SR_EOP_BIT
+    FLASH_WRITER_F0_CODE = [
+        # write:
+        0x03, 0x88,  # 0x8803    # ldrh r3, [r0]
+        0x0b, 0x80,  # 0x800b    # strh r3, [r1]
+        # test_busy:
+        0x23, 0x68,  # 0x6823    # ldr r3, [r4]
+        0x2b, 0x42,  # 0x422b    # tst r3, r5
+        0xfc, 0xd1,  # 0xd1fc    # bne <test_busy>
+        0x33, 0x42,  # 0x4233    # tst r3, r6
+        0x04, 0xd0,  # 0xd104    # beq <exit>
+        0x02, 0x30,  # 0x3002    # adds r0, #2
+        0x02, 0x31,  # 0x3102    # adds r1, #2
+        0x02, 0x3a,  # 0x3a02    # subs r2, #2
+        0x00, 0x2a,  # 0x2a00    # cmp r2, #0
+        0xf3, 0xd1,  # 0xd1f3    # bne <write>
+        # exit:
+        0x00, 0xbe,  # 0xbe00    # bkpt 0x00
+    ]
+
     def __init__(self, driver, stlink, dbg, bank=0):
         self._driver = driver
         self._stlink = stlink
@@ -39,14 +65,8 @@ class Flash():
             raise lib.stlinkex.StlinkException('Supply voltage is %.2fV, but minimum for FLASH program or erase is 2.0V' % self._stlink.target_voltage)
         self.unlock()
 
-    def clear_sr(self):
-        # clear errors
-        sr = self._stlink.get_debugreg32(Flash.FLASH_SR_REG)
-        self._stlink.set_debugreg32(Flash.FLASH_SR_REG, sr)
-
     def unlock(self):
-        self._driver.core_halt()
-        self.clear_sr()
+        self._driver.core_reset_halt()
         # programing locked
         if self._stlink.get_debugreg32(Flash.FLASH_CR_REG) & Flash.FLASH_CR_LOCK_BIT:
             # unlock keys
@@ -83,6 +103,29 @@ class Flash():
                 if addr + size < page_addr:
                     self._dbg.bargraph_done()
                     return
+
+    def init_write(self, sram_offset):
+        self._flash_writer_offset = sram_offset
+        self._flash_data_offset = sram_offset + 0x100
+        self._stlink.set_mem8(self._flash_writer_offset, Flash.FLASH_WRITER_F0_CODE)
+        # set configuration for flash writer
+        self._driver.set_reg('R4', Flash.FLASH_SR_REG)
+        self._driver.set_reg('R5', Flash.FLASH_SR_BUSY_BIT)
+        self._driver.set_reg('R6', Flash.FLASH_SR_EOP_BIT)
+        # enable PG
+        self._stlink.set_debugreg32(Flash.FLASH_CR_REG, Flash.FLASH_CR_PG_BIT)
+
+    def write(self, addr, block):
+        # if all data are 0xff then will be not written
+        if min(block) == 0xff:
+            return
+        self._stlink.set_mem32(self._flash_data_offset, block)
+        self._driver.set_reg('PC', self._flash_writer_offset)
+        self._driver.set_reg('R0', self._flash_data_offset)
+        self._driver.set_reg('R1', addr)
+        self._driver.set_reg('R2', len(block))
+        self._driver.core_run()
+        self.wait_for_breakpoint(0.2)
 
     def wait_busy(self, wait_time, bargraph_msg=None):
         end_time = time.time()
@@ -122,14 +165,14 @@ class Stm32FP(lib.stm32.Stm32):
         flash.erase_all()
         flash.lock()
 
-    def flash_erase_all(self, flash_size):
+    def flash_erase_all(self):
         self._dbg.debug('Stm32FP.flash_erase_all()')
         self._flash_erase_all()
 
-    def _flash_write(self, addr, data, erase=False, erase_sizes=None, bank=0):
+    def _flash_write(self, addr, data, erase=False, verify=False, erase_sizes=None, bank=0):
         # align data
-        if len(data) % 2:
-            data.extend([0xff] * (2 - len(data) % 2))
+        if len(data) % 4:
+            data.extend([0xff] * (4 - len(data) % 4))
         flash = Flash(self, self._stlink, self._dbg, bank=bank)
         if erase:
             if erase_sizes:
@@ -137,25 +180,25 @@ class Stm32FP(lib.stm32.Stm32):
             else:
                 flash.erase_all()
         self._dbg.bargraph_start('Writing FLASH', value_min=addr, value_max=addr + len(data))
-        self._stlink.set_debugreg32(Flash.FLASH_CR_REG, Flash.FLASH_CR_PG_BIT)
+        flash.init_write(Stm32FP.SRAM_START)
         while(data):
             self._dbg.bargraph_update(value=addr)
             block = data[:self._stlink.STLINK_MAXIMUM_TRANSFER_SIZE]
             data = data[self._stlink.STLINK_MAXIMUM_TRANSFER_SIZE:]
-            if min(block) != 0xff:
-                self._stlink.set_mem16(addr, block)
+            flash.write(addr, block)
+            if verify and block != self._stlink.get_mem32(addr, len(block)):
+                raise lib.stlinkex.StlinkException('Verify error at block address: 0x%08x' % addr)
             addr += len(block)
-        flash.wait_busy(0.001)
         flash.lock()
         self._dbg.bargraph_done()
 
-    def flash_write(self, addr, data, erase=False, erase_sizes=None):
-        self._dbg.debug('Stm32FP.flash_write(%s, [data:%dBytes], erase=%s, erase_sizes=%s)' % (('0x%08x' % addr) if addr is not None else 'None', len(data), erase, erase_sizes))
+    def flash_write(self, addr, data, erase=False, verify=False, erase_sizes=None):
+        self._dbg.debug('Stm32FP.flash_write(%s, [data:%dBytes], erase=%s, verify=%s, erase_sizes=%s)' % (('0x%08x' % addr) if addr is not None else 'None', len(data), erase, verify, erase_sizes))
         if addr is None:
             addr = self.FLASH_START
         elif addr % 2:
             raise lib.stlinkex.StlinkException('Start address is not aligned to half-word')
-        self._flash_write(addr, data, erase=erase, erase_sizes=erase_sizes)
+        self._flash_write(addr, data, erase=erase, verify=verify, erase_sizes=erase_sizes)
 
 
 # support STM32F MCUs with page access to FLASH and two banks
@@ -163,25 +206,25 @@ class Stm32FP(lib.stm32.Stm32):
 class Stm32FPXL(Stm32FP):
     BANK_SIZE = 512 * 1024
 
-    def flash_erase_all(self, flash_size):
+    def flash_erase_all(self):
         self._dbg.debug('Stm32F1.flash_erase_all()')
         self._flash_erase_all(bank=0)
         self._flash_erase_all(bank=1)
 
-    def flash_write(self, addr, data, erase=False, erase_sizes=None):
-        self._dbg.debug('Stm32F1.flash_write(%s, [data:%dBytes], erase=%s, erase_sizes=%s)' % (('0x%08x' % addr) if addr is not None else 'None', len(data), erase, erase_sizes))
+    def flash_write(self, addr, data, erase=False, verify=False, erase_sizes=None):
+        self._dbg.debug('Stm32F1.flash_write(%s, [data:%dBytes], erase=%s, verify=%s, erase_sizes=%s)' % (('0x%08x' % addr) if addr is not None else 'None', len(data), erase, verify, erase_sizes))
         if addr is None:
             addr = self.FLASH_START
         elif addr % 2:
             raise lib.stlinkex.StlinkException('Start address is not aligned to half-word')
         if (addr - self.FLASH_START) + len(data) <= Stm32FPXL.BANK_SIZE:
-            self._flash_write(addr, data, erase=erase, erase_sizes=erase_sizes, bank=0)
+            self._flash_write(addr, data, erase=erase, verify=verify, erase_sizes=erase_sizes, bank=0)
         elif (addr - self.FLASH_START) > Stm32FPXL.BANK_SIZE:
-            self._flash_write(addr, data, erase=erase, erase_sizes=erase_sizes, bank=1)
+            self._flash_write(addr, data, erase=erase, verify=verify, erase_sizes=erase_sizes, bank=1)
         else:
             addr_bank1 = addr
             addr_bank2 = self.FLASH_START + Stm32FPXL.BANK_SIZE
             data_bank1 = data[:(Stm32FPXL.BANK_SIZE - (addr - self.FLASH_START))]
             data_bank2 = data[(Stm32FPXL.BANK_SIZE - (addr - self.FLASH_START)):]
-            self._flash_write(addr_bank1, data_bank1, erase=erase, erase_sizes=erase_sizes, bank=0)
-            self._flash_write(addr_bank2, data_bank2, erase=erase, erase_sizes=erase_sizes, bank=1)
+            self._flash_write(addr_bank1, data_bank1, erase=erase, verify=verify, erase_sizes=erase_sizes, bank=0)
+            self._flash_write(addr_bank2, data_bank2, erase=erase, verify=verify, erase_sizes=erase_sizes, bank=1)
