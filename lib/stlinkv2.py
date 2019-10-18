@@ -136,7 +136,7 @@ class Stlink():
             self._ver_str += "M%d" % self._ver_mass
         if self.ver_api == 1:
             raise self._dbg.warning("ST-Link/%s is not supported, please upgrade firmware." % self._ver_str)
-        if self.ver_jtag < 21 and self._ver_api == 2:
+        if self.ver_jtag < 32 and self._ver_api == 2:
             self._dbg.warning("ST-Link/%s is not recent firmware, please upgrade first - functionality is not guaranteed." % self._ver_str)
         if self.ver_jtag < 3 and self._ver_api == 3:
             self._dbg.warning("ST-Link/%s is not recent firmware, please upgrade first - functionality is not guaranteed." % self._ver_str)
