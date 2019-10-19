@@ -64,7 +64,7 @@ class Flash():
 
     def unlock(self):
         self._dbg.debug('unlock start')
-        self._driver.core_halt()
+        self._driver.core_reset_halt()
         self.clear_sr()
         self._stlink.set_debugreg32(Flash.FLASH_CR_REG, Flash.FLASH_CR_LOCK_BIT)
         # Lock first. Double unlock results in error!
