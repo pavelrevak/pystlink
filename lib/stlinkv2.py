@@ -181,7 +181,10 @@ class Stlink():
 
     def read_coreid(self):
         rx = self._connector.xfer([Stlink.STLINK_DEBUG_COMMAND, Stlink.STLINK_DEBUG_READCOREID], rx_len=4)
-        self._coreid = int.from_bytes(rx[:4], byteorder='little')
+        if len(rx) < 4:
+            self._coreid = 0
+        else:
+            self._coreid = int.from_bytes(rx[:4], byteorder='little')
 
     @property
     def coreid(self):

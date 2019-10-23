@@ -73,7 +73,7 @@ examples:
   pystlink.py flash:erase:verify:app.bin
   pystlink.py flash:erase flash:verify:0x08010000:boot.bin
   pystlink.py -n 2
-  pystlink.py -s 
+  pystlink.py -s
 """
 
 
