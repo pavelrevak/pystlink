@@ -8,16 +8,16 @@ Goal of this project is to bring more flexible support for different MCUs, very 
 
 ## Features
 
-- running on **Linux**, **Mac OS/X** (also on OS/X 10.11.x) and **Windows**
+- running on **Linux**, **Mac OS/X** and **Windows**
 - simple command line interface
 - detect MCU
 - dump registers and memory
 - write registers
 - download memory to binary file
 - upload binary or SREC file into memory
-- FLASH binary or SREC file to all **STM32F**
+- FLASH binary or SREC file to all **STM32**
 - basic runtime control: reset, halt, step, run
-- support **ST-Link/V2** and **ST-Link/V2-1**
+- support **ST-Link/V2**, **ST-Link/V2-1** and **ST-Link/V3**
 
 ### Planed features
 
@@ -37,7 +37,7 @@ Goal of this project is to bring more flexible support for different MCUs, very 
 
 ### Requirements
 
-- **Python v3.x** (tested with python-3.4 and 3.5)
+- **Python v3.7+** (tested with 3.8)
 - [**pyusb**](https://github.com/walac/pyusb)
 - [**libusb**](https://github.com/libusb/libusb) or any other libusb driver
   - for Windows download [latest windows binaries](https://github.com/libusb/libusb) and copy libusb-1.0.dll into Windows/System32 directory
@@ -45,8 +45,8 @@ Goal of this project is to bring more flexible support for different MCUs, very 
 ### pystlink
 
 - [Download](https://github.com/pavelrevak/pystlink/archive/master.zip) and unpack or `git clone https://github.com/pavelrevak/pystlink.git`
-- Connect ST-LINK/V2, with [**latest firmware**](http://www.st.com/web/en/catalog/tools/PF258194)
-- Run `./pystlink.py --help` (or `python3 pystlink.py ...` - depend on python installation)
+- Connect ST-LINK
+- Run `./pystlink.py --help` (or `python3 pystlink.py ...` - depend on python installation and architecture)
 
 ## Help
 ```
@@ -127,23 +127,19 @@ examples:
 
 From ST exists actually three different SWD programmers:
 
-- ST-Link/V1 - support is not planned
-- **ST-Link/V2** - actually full support on all platforms
-- **ST-Link/V2-1** - actually full support on all platforms
+Full support:
+- **ST-Link/V2**
+- **ST-Link/V2-1**
+- **ST-Link/V3**
 
-Minimum recommended firmware version of ST-Link is **V2J21xx** or newer. Otherwise is recommended upgrade using [ST-LINK/V2 firmware upgrade](http://www.st.com/web/en/catalog/tools/PF258194) tool.
+Not supported:
+- ST-Link/V1
 
-### Mac OS/X 10.11.x
-
-Latest OS/X from Apple brings lot of problems around USB, especially with ST-Link devices.
-The problem appear if pystlink (or any other programmer for ST-Link like openocd, stlink, ..) is started second time then connection to st-link ends with timeouts.
-**Pystlink** has currently implemented some basic workarounds, to bring correct functionality on **OS/X 10.11.x**. If you get some problems, please report it.
+Minimum recommended firmware version of ST-Link is **V2J32xx** or newer. Otherwise is recommended upgrade using [ST-LINK firmware upgrade tool](https://www.st.com/en/development-tools/stsw-link007.html).
 
 ## Supported MCUs
 
-Currently almost all **ST32F** and **ST32L** [MCU](http://www.st.com/web/en/catalog/mmc/FM141/SC1169). There is script `list_new_stm32.py` which compare supported MCUs with all listed on st.com.
-
-FLASHing support is currently for all **STM32F**.
+Currently almost all **ST32** MCUs. There is script `list_new_stm32.py` which compare supported MCUs with all listed on st.com.
 
 **Not all MCUs are tested**. Please report any problems to [Issues tracker](https://github.com/pavelrevak/pystlink/issues).
 
@@ -160,4 +156,4 @@ Support is only by [Issues tracker](https://github.com/pavelrevak/pystlink/issue
 **PYSTLINK** is inspired by [OpenOCD](http://openocd.org/), [STLINK](https://github.com/texane/stlink) and lot of info is from sniffed USB communication with [original ST-LINK](http://www.st.com/web/en/catalog/tools/PF258168) program.
 
 ## TAGS
-ST-Link/V2, stlink, SWD, Python, ARM, CortexM, STM32, debug, FLASH, USB
+ST-Link/V2, ST-Link/V3, stlink, SWD, Python, ARM, CortexM, STM32, debug, FLASH, USB
