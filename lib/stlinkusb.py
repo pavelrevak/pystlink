@@ -21,7 +21,7 @@ class StlinkUsbConnector():
             'outPipe': 0x01,
             'inPipe': 0x81,
         }, {
-            'version': 'V2-1',
+            'version': 'V2-1',  # without MASS STORAGE
             'idVendor': 0x0483,
             'idProduct': 0x3752,
             'outPipe': 0x01,
@@ -36,6 +36,12 @@ class StlinkUsbConnector():
             'version': 'V3',
             'idVendor': 0x0483,
             'idProduct': 0x374f,
+            'outPipe': 0x01,
+            'inPipe': 0x81,
+        }, {
+            'version': 'V3',  # without MASS STORAGE
+            'idVendor': 0x0483,
+            'idProduct': 0x3753,
             'outPipe': 0x01,
             'inPipe': 0x81,
         }
