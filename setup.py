@@ -8,8 +8,8 @@ _ABOUT = {
     'VERSION': '1.0.0',
     'DESCRIPTION': 'Python tool for manipulating with STM32 MCUs using ST-Link in-system programmer and debugger.',
     'URL': 'https://github.com/pavelrevak/pystlink',
-    'AUTHOR': '',
-    'AUTHOR_EMAIL': ''
+    'AUTHOR': 'Pavel Revak',
+    'AUTHOR_EMAIL': 'pavel.revak@gmail.com'
 }
 
 def get_long_description():
