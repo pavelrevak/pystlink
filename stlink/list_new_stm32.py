@@ -1,6 +1,6 @@
 import urllib.request
 import json
-import lib.stm32devices
+import stlink.lib.stm32devices
 
 
 def fix_cpu_type(cpu_type):

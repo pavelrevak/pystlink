@@ -1,6 +1,7 @@
 import time
-import lib.stm32
-import lib.stlinkex
+import stlink.lib.stm32
+import stlink.lib.stlinkex
+import stlink.lib as lib
 
 # Stm32H7 programming
 class Flash():

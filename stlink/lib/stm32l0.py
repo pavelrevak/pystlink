@@ -1,6 +1,7 @@
 import time
-import lib.stm32
-import lib.stlinkex
+import stlink.lib.stm32
+import stlink.lib.stlinkex
+import stlink.lib as lib
 
 # Stm32 L0 and L1 programming
 class Flash():
@@ -71,7 +72,7 @@ class Flash():
         # check if programing was unlocked
         if pecr & Flash.PECR_PELOCK:
             raise lib.stlinkex.StlinkException(
-                'Error unlocking FLASH_CR: 0x%08x. Reset!' % prcr)
+                'Error unlocking FLASH_CR: 0x%08x. Reset!' % pecr)
 
     def lock(self):
         self._stlink.set_debugreg32(self._nvm + Flash.PECR_OFFSET,

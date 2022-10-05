@@ -8,4 +8,4 @@ fi
 
 work_dir=`dirname $exec_file`
 
-python3 $work_dir/pystlink.py $*
+python3 $work_dir/stlink/pystlink.py $*

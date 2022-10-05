@@ -1,18 +1,21 @@
 import sys
 import argparse
 import time
-import lib.stlinkusb
-import lib.stlinkv2
-import lib.stm32
-import lib.stm32fp
-import lib.stm32fs
-import lib.stm32l0
-import lib.stm32l4
-import lib.stm32h7
-import lib.stm32devices
-import lib.stlinkex
-import lib.dbg
-import lib.srec
+from typing import Optional
+from argparse import Namespace
+import stlink.lib.stlinkusb
+import stlink.lib.stlinkv2
+import stlink.lib.stm32
+import stlink.lib.stm32fp
+import stlink.lib.stm32fs
+import stlink.lib.stm32l0
+import stlink.lib.stm32l4
+import stlink.lib.stm32h7
+import stlink.lib.stm32devices
+import stlink.lib.stlinkex
+import stlink.lib.dbg
+import stlink.lib.srec
+import stlink.lib as lib
 
 VERSION_STR = "pystlink v0.0.0 (ST-LinkV2)"
 
@@ -436,24 +439,25 @@ class PyStlink():
         else:
             raise lib.stlinkex.StlinkExceptionBadParam()
 
-    def start(self):
-        parser = argparse.ArgumentParser(prog='pystlink', formatter_class=argparse.RawTextHelpFormatter, description=DESCRIPTION_STR, epilog=ACTIONS_HELP_STR)
-        group_verbose = parser.add_argument_group(title='set verbosity level').add_mutually_exclusive_group()
-        group_verbose.set_defaults(verbosity=1)
-        group_verbose.add_argument('-q', '--quiet', action='store_const', dest='verbosity', const=0)
-        group_verbose.add_argument('-i', '--info', action='store_const', dest='verbosity', const=1, help='default')
-        group_verbose.add_argument('-v', '--verbose', action='store_const', dest='verbosity', const=2)
-        group_verbose.add_argument('-d', '--debug', action='store_const', dest='verbosity', const=3)
-        parser.add_argument('-V', '--version', action='version', version=VERSION_STR)
-        parser.add_argument('-c', '--cpu', action='append', help='set expected CPU type [eg: STM32F051, STM32L4]')
-        parser.add_argument('-r', '--no-run', action='store_true', help='do not run core when program end (if core was halted)')
-        parser.add_argument('-u', '--no-unmount', action='store_true', help='do not unmount DISCOVERY from ST-Link/V2-1 on OS/X platform')
-        parser.add_argument('-s', '--serial', dest='serial', help='Use Stlink with given serial number')
-        parser.add_argument('-n', '--num-index', type=int, dest='index', default=0, help='Use Stlink with given index')
-        parser.add_argument('-H', '--hard', action='store_true', help='Reset device with NRST')
-        group_actions = parser.add_argument_group(title='actions')
-        group_actions.add_argument('action', nargs='*', help='actions will be processed sequentially')
-        args = parser.parse_args()
+    def start(self, args: Optional[Namespace] = None):
+        if args is None:
+            parser = argparse.ArgumentParser(prog='pystlink', formatter_class=argparse.RawTextHelpFormatter, description=DESCRIPTION_STR, epilog=ACTIONS_HELP_STR)
+            group_verbose = parser.add_argument_group(title='set verbosity level').add_mutually_exclusive_group()
+            group_verbose.set_defaults(verbosity=1)
+            group_verbose.add_argument('-q', '--quiet', action='store_const', dest='verbosity', const=0)
+            group_verbose.add_argument('-i', '--info', action='store_const', dest='verbosity', const=1, help='default')
+            group_verbose.add_argument('-v', '--verbose', action='store_const', dest='verbosity', const=2)
+            group_verbose.add_argument('-d', '--debug', action='store_const', dest='verbosity', const=3)
+            parser.add_argument('-V', '--version', action='version', version=VERSION_STR)
+            parser.add_argument('-c', '--cpu', action='append', help='set expected CPU type [eg: STM32F051, STM32L4]')
+            parser.add_argument('-r', '--no-run', action='store_true', help='do not run core when program end (if core was halted)')
+            parser.add_argument('-u', '--no-unmount', action='store_true', help='do not unmount DISCOVERY from ST-Link/V2-1 on OS/X platform')
+            parser.add_argument('-s', '--serial', dest='serial', help='Use Stlink with given serial number')
+            parser.add_argument('-n', '--num-index', type=int, dest='index', default=0, help='Use Stlink with given index')
+            parser.add_argument('-H', '--hard', action='store_true', help='Reset device with NRST')
+            group_actions = parser.add_argument_group(title='actions')
+            group_actions.add_argument('action', nargs='*', help='actions will be processed sequentially')
+            args = parser.parse_args()
         self._dbg = lib.dbg.Dbg(args.verbosity)
         self._serial = args.serial
         self._index = args.index

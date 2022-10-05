@@ -1,5 +1,6 @@
-import lib.stm32devices
-import lib.stlinkex
+import stlink.lib.stm32devices
+import stlink.lib.stlinkex
+import stlink.lib as lib
 
 
 class Stm32():
