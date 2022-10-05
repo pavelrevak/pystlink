@@ -7,5 +7,4 @@ if [ -L "$exec_file" ] ; then
 fi
 
 work_dir=`dirname $exec_file`
-
-python3 $work_dir/stlink/pystlink.py $*
+cd $work_dir && python3 -m stlink.pystlink $*

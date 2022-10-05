@@ -1,9 +1,22 @@
 import sys
 import time
+import logging
+from logging import LogRecord
+from typing import Callable, Optional
+from tqdm import tqdm
+
+logger = logging.getLogger('pystlink')
+# logger.addHandler(logging.NullHandler())
 
 
-class Dbg():
-    def __init__(self, verbose, bar_length=40):
+class Formatter(logging.Formatter):
+    def format(self, record: LogRecord) -> str:
+        record.msg = record.msg.strip()
+        return super(Formatter, self).format(record)
+
+
+class Dbg:
+    def __init__(self, verbose, bar_length=40, bargraph_on_update: Optional[Callable[[int, str], None]] = None):
         self._verbose = verbose
         self._bargraph_msg = None
         self._bargraph_min = None
@@ -12,6 +25,7 @@ class Dbg():
         self._bar_length = bar_length
         self._prev_percent = None
         self._start_time = None
+        self._bargraph_handler = self.print_bargraph if bargraph_on_update is None else bargraph_on_update
 
     def _msg(self, msg, level):
         if self._verbose >= level:
@@ -21,37 +35,42 @@ class Dbg():
             sys.stderr.write('%s\n' % msg)
             sys.stderr.flush()
 
-    def debug(self, msg, level=3):
-        self._msg(msg, level)
+    def debug(self, msg):
+        logger.debug(f'{msg}\n')
 
-    def verbose(self, msg, level=2):
-        self._msg(msg, level)
+    def verbose(self, msg):
+        logger.debug(f'{msg}\n')
 
-    def info(self, msg, level=1):
-        self._msg(msg, level)
+    def info(self, msg):
+        logger.info(f'{msg}\n')
 
-    def message(self, msg, level=0):
-        self._msg(msg, level)
+    def message(self, msg):
+        logger.info(f'{msg}\n')
 
-    def error(self, msg, level=0):
-        self._msg('*** %s ***' % msg, level)
+    def error(self, msg):
+        logger.error(f'*** {msg} ***\n')
 
-    def warning(self, msg, level=0):
-        self._msg(' * %s' % msg, level)
+    def warning(self, msg):
+        logger.warning(f' * {msg}\n')
 
-    def print_bargraph(self, percent):
+    def print_bargraph(self, percent, msg):
         if percent == self._prev_percent:
             return
-        bar = int(percent * self._bar_length) // 100
-        sys.stderr.write('\r%s: [%s%s] %3d%%' % (
-            self._bargraph_msg,
-            '=' * bar,
-            ' ' * (self._bar_length - bar),
-            percent,
-        ))
-        sys.stderr.flush()
-        self._prev_percent = percent
-        self._newline = False
+        if percent == -2:
+            logger.info('\r%s: [%s] done in %.2fs\n' % (self._bargraph_msg, '=' * self._bar_length, time.time() - self._start_time))
+            self._newline = True
+            self._bargraph_msg = None
+        elif percent == -1:
+            if not self._newline:
+                self._newline = False
+                logger.info('%s' % msg)
+            self._prev_percent = None
+            self._newline = False
+        else:
+            bar = int(percent * self._bar_length) // 100
+            logger.info('\r%s: [%s%s] %3d%%' % (self._bargraph_msg, '=' * bar, ' ' * (self._bar_length - bar), percent, ))
+            self._prev_percent = percent
+            self._newline = False
 
     def bargraph_start(self, msg, value_min=0, value_max=100, level=1):
         self._start_time = time.time()
@@ -60,10 +79,11 @@ class Dbg():
         self._bargraph_msg = msg
         self._bargraph_min = value_min
         self._bargraph_max = value_max
+        self._bargraph_handler(-1, msg)
         if not self._newline:
-            sys.stderr.write('\n')
+            logger.info('\n')
             self._newline = False
-        sys.stderr.write('%s' % msg)
+        logger.info('%s' % msg)
         self._prev_percent = None
         self._newline = False
 
@@ -77,15 +97,12 @@ class Dbg():
                 percent = 0
         if percent > 100:
             percent = 100
-        self.print_bargraph(percent)
+        self._bargraph_handler(percent, self._bargraph_msg)
 
     def bargraph_done(self):
         if not self._bargraph_msg:
             return
-        sys.stderr.write('\r%s: [%s] done in %.2fs\n' % (self._bargraph_msg, '=' * self._bar_length, time.time() - self._start_time))
-        sys.stderr.flush()
-        self._newline = True
-        self._bargraph_msg = None
+        self._bargraph_handler(-2, self._bargraph_msg)
 
     def set_verbose(self, verbose):
         self._verbose = verbose

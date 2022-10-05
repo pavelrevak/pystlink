@@ -12,6 +12,7 @@ _ABOUT = {
     'AUTHOR_EMAIL': 'pavel.revak@gmail.com'
 }
 
+
 def get_long_description():
     current_dir = os.path.abspath(os.path.dirname(__file__))
     readme_file = os.path.join(current_dir, 'README.md')
@@ -46,7 +47,7 @@ setuptools.setup(
     ],
 
     install_requires=[
-        'pyusb (>=1.0.2)'
+        'pyusb (>=1.0.2)',
     ],
 
     entry_points={

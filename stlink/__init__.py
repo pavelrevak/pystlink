@@ -1,6 +1,9 @@
+import logging
+
 from stlink.pystlink import PyStlink
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Callable
 from argparse import Namespace
+# from .pystlink import PyStlink
 
 __all__ = [
     'PyStlink',
@@ -14,18 +17,21 @@ class StlinkWrapper:
         self._commands: List[List] = []
 
     def _dispatch(self, actions: Optional[List[List]], verbosity: int = 1, serial: str = None, hard: bool = False,
-                  index: int = 0, cpu: List[str] = (), no_unmount=True, no_run=True):
+                  index: int = 0, cpu: List[str] = (), no_unmount=True, no_run=True,
+                  bar_on_update: Callable[[int, str], None] = None):
         args = {
-            'action': [':'.join(filter(None, [] if action is None else action)) for action in actions], 'serial': serial, 'index': index, 'hard': hard, 'verbosity': verbosity, 'cpu': cpu,
+            'action': [':'.join(filter(None, [] if action is None else action)) for action in actions],
+            'serial': serial, 'index': index, 'hard': hard, 'verbosity': verbosity, 'cpu': cpu,
             'no_run': no_run, 'no_unmount': no_unmount
         }
         args = Namespace(**args)
-        self._link.start(args)
+        self._link.start(args, bargraph_on_update=bar_on_update)
         self._commands.clear()
 
     def dispatch(self, verbosity: int = 1, serial: str = None, hard: bool = False,
-                  index: int = 0, cpu: List[str] = (), no_unmount=True, no_run=True):
-        self._dispatch(self._commands, verbosity, serial, hard, index, cpu, no_unmount, no_run)
+                  index: int = 0, cpu: List[str] = (), no_unmount=True, no_run=True,
+                 bar_on_update: Callable[[int, str], None] = None):
+        self._dispatch(self._commands, verbosity, serial, hard, index, cpu, no_unmount, no_run, bar_on_update)
 
     def _add_command(self, commands: List):
         self._commands.append(commands)
@@ -109,11 +115,14 @@ class StlinkWrapper:
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+    logging.StreamHandler.terminator = ''   # Ugly trick to suppress '\n', they are manually managed by the DBG class
     stlink = StlinkWrapper()
     stlink\
         .reset()\
-        .flash_erase(erase=True, verify=True, file='../SW.bin', addr='0x8000000')\
+        .flash_erase(erase=True, verify=True, file='../SW.bin', addr='0x8000000') \
         .dispatch(verbosity=2)
+#        .dispatch(verbosity=2, bar_on_update=lambda x, y: print(x, y))
 
 # if __name__ == '__main__':
 #    pass
