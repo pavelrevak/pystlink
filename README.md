@@ -28,10 +28,22 @@ Goal of this project is to bring more flexible support for different MCUs, very 
 - allow to control breakpoints or watchpoints
 - support for more ST-Link devices connected at once
 - other file formats (SREC, HEX, ELF, ...)
-- pip installer
+- ~~pip installer~~
 - proxy to GDB
 - and maybe GUI
 - support for ST-Link/V1 is NOT planed, use ST-Link/V2 or V2-1 instead
+
+
+## Usage  
+
+```python
+stlink = StlinkWrapper()
+stlink\
+    .reset()\
+    .flash_erase(erase=True, verify=True, file='../firmware.bin', addr='0x8000000')\
+    .dispatch(verbosity=2)
+```
+
 
 ## Install
 

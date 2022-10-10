@@ -1,6 +1,7 @@
 import usb.core
 import usb.util
-import lib.stlinkex
+import stlink.lib.stlinkex
+import stlink.lib as lib
 import re
 
 
@@ -168,3 +169,6 @@ class StlinkUsbConnector():
                 stderr=subprocess.PIPE,
             )
             p.wait()
+
+    def close(self):
+        self._dev.reset()

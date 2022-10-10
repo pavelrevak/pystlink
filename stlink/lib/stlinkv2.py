@@ -1,4 +1,5 @@
-import lib.stlinkex
+import stlink.lib.stlinkex
+import stlink.lib as lib
 
 
 class Stlink():
