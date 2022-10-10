@@ -3,10 +3,9 @@ import time
 import logging
 from logging import LogRecord
 from typing import Callable, Optional
-from tqdm import tqdm
 
 logger = logging.getLogger('pystlink')
-# logger.addHandler(logging.NullHandler())
+logger.addHandler(logging.NullHandler())
 
 
 class Formatter(logging.Formatter):

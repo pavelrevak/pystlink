@@ -169,3 +169,6 @@ class StlinkUsbConnector():
                 stderr=subprocess.PIPE,
             )
             p.wait()
+
+    def close(self):
+        self._dev.reset()

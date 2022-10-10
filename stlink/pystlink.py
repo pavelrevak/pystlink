@@ -476,6 +476,8 @@ class PyStlink():
                     raise e.set_cmd(action)
         except (lib.stlinkex.StlinkExceptionBadParam, lib.stlinkex.StlinkException) as e:
             self._dbg.error(e)
+            if args.verbosity >= 3:
+                raise e
             runtime_status = 1
         except KeyboardInterrupt:
             self._dbg.error('Keyboard interrupt')
@@ -496,10 +498,13 @@ class PyStlink():
                 self._stlink.clean_exit()
             except lib.stlinkex.StlinkException as e:
                 self._dbg.error(e)
+                if args.verbosity >= 3:
+                    raise e
                 runtime_status = 1
             self._dbg.verbose('DONE in %0.2fs' % (time.time() - self._start_time))
         if runtime_status:
             sys.exit(runtime_status)
+        self._connector.close()
 
 
 if __name__ == "__main__":

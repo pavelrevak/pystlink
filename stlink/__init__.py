@@ -1,4 +1,5 @@
 import logging
+import time
 
 from stlink.pystlink import PyStlink
 from typing import Optional, List, Union, Callable
@@ -120,12 +121,6 @@ if __name__ == '__main__':
     stlink = StlinkWrapper()
     stlink\
         .reset()\
-        .flash_erase(erase=True, verify=True, file='../SW.bin', addr='0x8000000') \
-        .dispatch(verbosity=2)
-#        .dispatch(verbosity=2, bar_on_update=lambda x, y: print(x, y))
-
-# if __name__ == '__main__':
-#    pass
-    # stlink = StlinkWrapper()
-    # stlink.reset().dispatch()
-    # stlink.flash_erase(True, True, '../flash_tool.bin').dispatch(verbosity=3)
+        .flash_erase(erase=True, verify=True, file='../firmware.bin', addr='0x8000000') \
+        .reset()\
+        .dispatch(verbosity=3, hard=True, no_run=False)
